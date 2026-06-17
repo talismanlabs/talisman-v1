@@ -5,3 +5,23 @@ security, memory, observability, or app wiring (enforced by Import Linter). Keep
 the domain pure makes the core concepts portable across interfaces and future
 implementations.
 """
+
+from talisman_core.domain.artifact import Artifact
+from talisman_core.domain.gate import Gate, GateStatus
+from talisman_core.domain.project import Project, WorkflowTier
+from talisman_core.domain.review_result import (
+    ReviewRecommendation,
+    ReviewResult,
+    ReviewStatus,
+)
+
+__all__ = [
+    "Artifact",
+    "Gate",
+    "GateStatus",
+    "Project",
+    "ReviewRecommendation",
+    "ReviewResult",
+    "ReviewStatus",
+    "WorkflowTier",
+]
