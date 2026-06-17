@@ -1,0 +1,45 @@
+[importlinter]
+root_package = talisman_core
+
+[importlinter:contract:domain_is_pure]
+name = Domain layer must remain pure
+type = forbidden
+source_modules =
+    talisman_core.domain
+forbidden_modules =
+    talisman_core.adapters
+    talisman_core.workers
+    talisman_core.security
+    talisman_core.memory
+    talisman_core.observability
+    talisman_core.app
+
+[importlinter:contract:workflow_uses_ports_not_adapters]
+name = Workflow must depend on ports, not concrete adapters
+type = forbidden
+source_modules =
+    talisman_core.workflow
+forbidden_modules =
+    talisman_core.adapters
+    talisman_core.workers
+
+[importlinter:contract:policies_do_not_call_infrastructure]
+name = Policies must not call infrastructure
+type = forbidden
+source_modules =
+    talisman_core.policies
+forbidden_modules =
+    talisman_core.adapters
+    talisman_core.workers
+    talisman_core.app
+
+[importlinter:contract:app_is_composition_root]
+name = Only app wires concrete implementations
+type = forbidden
+source_modules =
+    talisman_core.domain
+    talisman_core.workflow
+    talisman_core.policies
+    talisman_core.ports
+forbidden_modules =
+    talisman_core.app

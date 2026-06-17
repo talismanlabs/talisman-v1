@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "talisman-core"
+version = "0.1.0"
+description = "Local-first personal AI orchestration system (TalisMan v1)"
+requires-python = ">=3.11"
+# Runtime dependencies are intentionally EMPTY at the repository-constitution
+# baseline. Per the TalisMan coding standards ("do not add runtime dependencies
+# unless needed for this slice"), each runtime dependency is introduced by the
+# specific governed slice that first needs it — for example, langgraph in the
+# Phase 3 workflow slice, and fastapi/httpx in the gateway slices.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "import-linter>=2.0",
+  "pre-commit>=3.7",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+strict = true
+ignore_missing_imports = true
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+# Make the src-layout package importable in tests without an editable install.
+pythonpath = ["src"]

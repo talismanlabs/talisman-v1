@@ -1,0 +1,22 @@
+# Cross-family review artifact (required for every slice; see docs/reviews/README.md).
+# Copy to docs/reviews/<slice-id>.yaml and fill in. The reviewer is the OPPOSITE family
+# from the lead. Deterministic checks must already be green before review.
+slice_id: S00.00
+lead_agent: claude_code_or_codex_cli
+review_agent: codex_cli_or_claude_code
+review_status: pass # pass | pass_with_notes | block
+risk_level: low # low | medium | high
+checks_observed:
+  ruff: pass # pass | fail | not_run
+  ruff_format: pass # pass | fail | not_run
+  mypy: pass # pass | fail | not_run
+  pytest: pass # pass | fail | not_run
+  lint_imports: pass # pass | fail | not_run
+architecture_boundary_check: pass # pass | fail
+security_check: not_applicable # pass | fail | not_applicable
+findings:
+  - id: R1
+    severity: low # low | medium | high | blocker
+    finding: "Describe the issue."
+    required_fix: "Describe the required fix or say none."
+final_recommendation: accept # accept | revise | reject
