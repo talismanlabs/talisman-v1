@@ -54,3 +54,31 @@ def test_invalid_slot_limit_is_rejected() -> None:
     """A scheduler must have at least one slot."""
     with pytest.raises(ValueError, match="at least 1"):
         PortfolioScheduler(active_slot_limit=0)
+
+
+def test_duplicate_task_id_is_rejected() -> None:
+    """A task id already queued or active cannot be enqueued again (cap-safety)."""
+    scheduler = PortfolioScheduler(active_slot_limit=2)
+    scheduler.enqueue(ScheduledTask("dup", "p"))
+    with pytest.raises(ValueError, match="already scheduled"):
+        scheduler.enqueue(ScheduledTask("dup", "p"))
+
+
+def test_duplicate_ids_cannot_bypass_the_cap() -> None:
+    """Uniqueness enforcement prevents two tasks from sharing one active slot."""
+    scheduler = PortfolioScheduler(active_slot_limit=2)
+    scheduler.enqueue(ScheduledTask("a", "p"))
+    with pytest.raises(ValueError):
+        scheduler.enqueue(ScheduledTask("a", "p"))
+    scheduler.start_next()
+    assert scheduler.active_count == 1  # accurate count, not collapsed
+
+
+def test_task_id_reusable_after_completion() -> None:
+    """An id may be reused once its task has completed and freed its slot."""
+    scheduler = PortfolioScheduler(active_slot_limit=1)
+    scheduler.enqueue(ScheduledTask("a", "p"))
+    scheduler.start_next()
+    scheduler.complete("a")
+    scheduler.enqueue(ScheduledTask("a", "p"))  # allowed now
+    assert scheduler.queued_count == 1
