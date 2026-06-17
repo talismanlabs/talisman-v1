@@ -1,0 +1,29 @@
+slice_id: S09.02
+lead_agent: codex_cli
+review_agent: claude_code
+status: approved
+recommendation: approve
+findings: []
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  status: pass
+  notes: "budget.py imports only stdlib (sqlite3, dataclasses, datetime, enum, pathlib, typing) plus the sibling migrations.initialize_database; no domain/ports/workflow/policies/app/workers/vendor imports. lint-imports: 5 contracts kept, 0 broken. No new port this slice — consistent with ADR-0004's 'without adding a new core port' framing and prior SQLite-adapter slices."
+correctness:
+  status: pass
+  notes: "Traced all three check_call outcomes against real SQLite. Projected total EQUAL to the hard cap is ALLOWED (10.0 == 10.0); strictly ABOVE pauses (10.01 -> PAUSE_DAILY). Daily-before-monthly ordering verified when both breach. check_call is read-only (spend unchanged) and pre-call (no record/forward). Time-window correct: CURRENT_TIMESTAMP is UTC and its 'YYYY-MM-DD HH:MM:SS' 19-char format matches _format_sqlite_timestamp exactly, so the BINARY-collation 'created_at >= cutoff' string comparison is chronologically correct. Confirmed local time differs from UTC by 4h on this host yet SQLite CURRENT_TIMESTAMP and Python datetime.now(UTC) agree (no mismatch). Day/month/year boundaries + inclusive start-of-window verified, no off-by-one. Durable across fresh adapter instances; record_spend guards lastrowid/reload with explicit RuntimeErrors. The lone cast(_BudgetEventRow, row) is justified; no `# type: ignore`."
+security:
+  status: pass
+  notes: "All SQL values parameterized (INSERT, SELECT-by-id, SUM-since, cutoff); no string interpolation. budget_events table + created_at index are CREATE ... IF NOT EXISTS (idempotent). Non-negative validation on cost_usd, estimated_cost_usd, and both hard caps. No secrets or sensitive logging."
+scope:
+  status: pass
+  notes: "Limited to src/talisman_core/adapters/sqlite/ (new budget.py; schema.sql gains budget_events + index) and tests/adapters/ (new test_sqlite_budget.py; migrations test EXPECTED_TABLES updated). No core port or workflow/app wiring touched. BudgetCircuitOpen + require_call_allowed go slightly beyond the literal acceptance text but are appropriate pre-call enforcement affordances, not scope creep."
+acceptance_criteria:
+  status: pass
+  notes: "'Simulated daily/monthly cap pauses work.' Met: a projected (current + estimated) spend exceeding the daily or monthly hard cap returns a PAUSE_* decision and require_call_allowed raises BudgetCircuitOpen BEFORE any provider call, with spend recorded durably to budget_events per ADR-0004. Tests drive real breaches past the cap (9.75 + 0.26 > 10.0 daily; 59.50 + 0.51 > 60.0 monthly), assert both check_call and the raising path, plus cross-connection persistence."
+open_risks:
+  - "Read-then-act TOCTOU: check_call and a later record_spend use separate connections, so concurrent callers could each pass the check before either records, slightly overshooting a cap. Acceptable for a single-orchestrator v1; revisit if the gateway becomes concurrent (enforce within one transaction or via a serialized writer)."

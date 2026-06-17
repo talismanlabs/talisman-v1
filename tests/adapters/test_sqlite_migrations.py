@@ -12,6 +12,7 @@ EXPECTED_TABLES = {
     "gate_events",
     "scheduler_events",
     "events",
+    "budget_events",
 }
 
 
