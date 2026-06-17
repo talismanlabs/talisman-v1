@@ -66,5 +66,15 @@ CREATE TABLE IF NOT EXISTS events (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS budget_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT,
+    cost_usd REAL NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_events_project_id_event_id
 ON events (project_id, event_id);
+
+CREATE INDEX IF NOT EXISTS idx_budget_events_created_at
+ON budget_events (created_at);
