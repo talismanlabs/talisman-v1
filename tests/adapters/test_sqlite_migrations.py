@@ -5,7 +5,14 @@ from pathlib import Path
 
 from talisman_core.adapters.sqlite.migrations import initialize_database
 
-EXPECTED_TABLES = {"projects", "lessons", "lesson_audit", "gate_events", "scheduler_events"}
+EXPECTED_TABLES = {
+    "projects",
+    "lessons",
+    "lesson_audit",
+    "gate_events",
+    "scheduler_events",
+    "events",
+}
 
 
 def test_initialize_database_creates_expected_tables(tmp_path: Path) -> None:

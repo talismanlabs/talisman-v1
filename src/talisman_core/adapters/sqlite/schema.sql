@@ -57,3 +57,14 @@ CREATE TABLE IF NOT EXISTS scheduler_events (
     total_wait_seconds INTEGER NOT NULL DEFAULT 0,
     last_wait_reason TEXT
 );
+
+CREATE TABLE IF NOT EXISTS events (
+    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    payload TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_events_project_id_event_id
+ON events (project_id, event_id);

@@ -6,12 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 4 — SQLite state and memory
-- **Current slice:** S04.01 SQLite migrations — review_ready (PR open; Codex review: pass)
-- **Last completed slice:** S03.02 Gate interrupt + resume (merged, PR #6) — Phase 3 complete
-- **Current blocker:** awaiting human review + merge of the S04.01 PR.
-- **Next human decision needed:** merge the S04.01 PR; the loop then continues with S04.02 (project
-  event log — Codex lead / Claude review), which completes Phase 4.
+- **Current phase:** Phase 4 — SQLite state and memory (final slice in review)
+- **Current slice:** S04.02 Project event log — review_ready (PR open; Claude review: pass)
+- **Last completed slice:** S04.01 SQLite migrations (merged, PR #7)
+- **Current blocker:** awaiting human review + merge of the S04.02 PR.
+- **Next human decision needed:** merge the S04.02 PR. That completes Phase 4; next is Phase 5
+  (Telegram approval interface) — S05.01 Telegram allowlist (Claude lead / Codex review).
 
 ## Build harness status (2026-06-17)
 
@@ -56,7 +56,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S02.03 | 2 | Claude Code | Codex CLI | accepted | all five pass; negative test confirms the new contract bites | `docs/reviews/S02.03.yaml` (approve) | none | merged (PR #3) |
 | 2026-06-17 | S03.01 | 3 | Claude Code | Codex CLI | accepted | all five pass; graph compiles + walks lightweight (5) and full-spiral (9) to END | `docs/reviews/S03.01.yaml` (approve) | one narrow mypy ignore for langgraph add_node overload | merged (PR #5) |
 | 2026-06-17 | S03.02 | 3 | Codex CLI | Claude Code | accepted | all five pass; 17 tests incl. gate pause + 4 resume routes (approve/revise/pause/reject) on MemorySaver | `docs/reviews/S03.02.yaml` (approve) | AT-04 durable resume deferred to Phase 4 (SqliteSaver, same interface) | merged (PR #6) |
-| 2026-06-17 | S04.01 | 4 | Claude Code | Codex CLI | review_ready | all five pass; 19 tests (tables created + idempotent re-init preserves data) | `docs/reviews/S04.01.yaml` (pass) | SQLite placed in adapters/ (not artifact's memory/schema.sql) — confirmed correct by reviewer | human review + merge of PR |
+| 2026-06-17 | S04.01 | 4 | Claude Code | Codex CLI | accepted | all five pass; 19 tests (tables created + idempotent re-init preserves data) | `docs/reviews/S04.01.yaml` (pass) | SQLite placed in adapters/ (confirmed correct by reviewer) | merged (PR #7) |
+| 2026-06-17 | S04.02 | 4 | Codex CLI | Claude Code | review_ready | all five pass; 22 tests (cross-connection persistence, per-project isolation, stable ordering) | `docs/reviews/S04.02.yaml` (pass) | EventLog has no port yet — add one before the first core consumer (review finding) | human review + merge of PR |
 
 ## Decision log
 
@@ -82,3 +83,4 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Port-layer purity enforced by review, not Import Linter | low | medium | Added `ports_do_not_import_infrastructure` Import Linter contract (S02.03); verified by negative test | agents | mitigated |
 | Review-artifact YAML schema drifts between reviewers (Codex/Claude improvise keys) | low | low | Align `docs/reviews/REVIEW-TEMPLATE.yaml` + pin the schema in both review prompts (follow-up) | agents | open |
 | Codex `workspace-write` sandbox blocked by bwrap (no loopback netns) in this env | low | low | Use `--sandbox danger-full-access` for Codex-led implementation; bounded by the outer environment + review + checks | agents | open |
+| SQLite event log (S04.02) has no consuming port yet | low | low | Add an `EventLog` port in `talisman_core.ports` before any core layer consumes the log; app wires the adapter (S04.02 review finding) | agents | open |
