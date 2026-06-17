@@ -28,8 +28,8 @@
 | S02.02 | 2 | Implement ports | Codex CLI | Claude Code | accepted | Worker, approval, state, gateway, memory, and notifier ports exist. (merged PR #2) |
 | S02.03 | 2 | Harden ports import boundary | Claude Code | Codex CLI | accepted | `.importlinter` forbids `ports` importing `adapters`/`workers`; `lint-imports` passes (from S02.02 review finding R1). (merged PR #3) |
 | S03.01 | 3 | Implement LangGraph spiral state | Claude Code | Codex CLI | accepted | Serializable state schema and basic graph compile. (per ADR-0002; merged PR #5) |
-| S03.02 | 3 | Add approval interrupt and resume | Codex CLI | Claude Code | review_ready | Fake approval gate pauses and resumes after decision. (interrupt()/Command resume; per ADR-0002) |
-| S04.01 | 4 | Add SQLite migrations | Claude Code | Codex CLI | not_started | Database initializes idempotently. |
+| S03.02 | 3 | Add approval interrupt and resume | Codex CLI | Claude Code | accepted | Fake approval gate pauses and resumes after decision. (interrupt()/Command resume; per ADR-0002; merged PR #6) |
+| S04.01 | 4 | Add SQLite migrations | Claude Code | Codex CLI | review_ready | Database initializes idempotently. (adapters/sqlite; canonical schema) |
 | S04.02 | 4 | Add project event log | Codex CLI | Claude Code | not_started | Events persist and can be queried by project. |
 | S05.01 | 5 | Add Telegram allowlist | Claude Code | Codex CLI | not_started | Non-allowlisted user is rejected. |
 | S05.02 | 5 | Add approval idempotency | Codex CLI | Claude Code | not_started | Duplicate approval messages do not double-advance state. |

@@ -6,12 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 3 — LangGraph workflow skeleton (final slice in review)
-- **Current slice:** S03.02 Gate interrupt + resume — review_ready (PR open; Claude review: approve)
-- **Last completed slice:** S03.01 LangGraph spiral state + graph compile (merged, PR #5)
-- **Current blocker:** awaiting human review + merge of the S03.02 PR.
-- **Next human decision needed:** merge the S03.02 PR. That completes Phase 3; next is Phase 4
-  (SQLite state + memory) — S04.01 SQLite migrations (Claude lead / Codex review).
+- **Current phase:** Phase 4 — SQLite state and memory
+- **Current slice:** S04.01 SQLite migrations — review_ready (PR open; Codex review: pass)
+- **Last completed slice:** S03.02 Gate interrupt + resume (merged, PR #6) — Phase 3 complete
+- **Current blocker:** awaiting human review + merge of the S04.01 PR.
+- **Next human decision needed:** merge the S04.01 PR; the loop then continues with S04.02 (project
+  event log — Codex lead / Claude review), which completes Phase 4.
 
 ## Build harness status (2026-06-17)
 
@@ -29,8 +29,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 0 | Repository constitution | accepted (constitution baseline) | 2026-06-17 | 2026-06-17 | pending |
 | 1 | Development environment | accepted (constitution baseline) | 2026-06-17 | 2026-06-17 | pending |
 | 2 | Domain and ports | accepted | 2026-06-17 | 2026-06-17 |  |
-| 3 | LangGraph workflow skeleton | in_progress | 2026-06-17 |  |  |
-| 4 | SQLite state and memory | not_started |  |  |  |
+| 3 | LangGraph workflow skeleton | accepted | 2026-06-17 | 2026-06-17 |  |
+| 4 | SQLite state and memory | in_progress | 2026-06-17 |  |  |
 | 5 | Telegram approval interface | not_started |  |  |  |
 | 6 | Claude Code worker adapter | not_started |  |  |  |
 | 7 | Codex CLI worker adapter | not_started |  |  |  |
@@ -55,7 +55,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S02.02 | 2 | Codex CLI | Claude Code | accepted | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.02.yaml` (accept) | R1 addressed by S02.03 | merged (PR #2) |
 | 2026-06-17 | S02.03 | 2 | Claude Code | Codex CLI | accepted | all five pass; negative test confirms the new contract bites | `docs/reviews/S02.03.yaml` (approve) | none | merged (PR #3) |
 | 2026-06-17 | S03.01 | 3 | Claude Code | Codex CLI | accepted | all five pass; graph compiles + walks lightweight (5) and full-spiral (9) to END | `docs/reviews/S03.01.yaml` (approve) | one narrow mypy ignore for langgraph add_node overload | merged (PR #5) |
-| 2026-06-17 | S03.02 | 3 | Codex CLI | Claude Code | review_ready | all five pass; 17 tests incl. gate pause + 4 resume routes (approve/revise/pause/reject) on MemorySaver | `docs/reviews/S03.02.yaml` (approve) | AT-04 durable resume deferred to Phase 4 (SqliteSaver, same interface) | human review + merge of PR |
+| 2026-06-17 | S03.02 | 3 | Codex CLI | Claude Code | accepted | all five pass; 17 tests incl. gate pause + 4 resume routes (approve/revise/pause/reject) on MemorySaver | `docs/reviews/S03.02.yaml` (approve) | AT-04 durable resume deferred to Phase 4 (SqliteSaver, same interface) | merged (PR #6) |
+| 2026-06-17 | S04.01 | 4 | Claude Code | Codex CLI | review_ready | all five pass; 19 tests (tables created + idempotent re-init preserves data) | `docs/reviews/S04.01.yaml` (pass) | SQLite placed in adapters/ (not artifact's memory/schema.sql) — confirmed correct by reviewer | human review + merge of PR |
 
 ## Decision log
 
