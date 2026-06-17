@@ -12,7 +12,16 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 - **Current blocker:** Stage A prerequisite — Codex CLI + `OPENAI_API_KEY` must be installed/set
   before the cross-family loop can run (per the "true cross-family now" decision).
 - **Next human decision needed:** (1) approve the repository-constitution baseline and ADR-0001;
-  (2) confirm Codex CLI is installed so the loop may begin Phase 2.
+  (2) choose the branch-protection posture — enforced protection needs GitHub Pro or a public repo
+  (see decision log); (3) install Codex CLI + set `OPENAI_API_KEY` so the loop may begin Phase 2.
+
+## Build harness status (2026-06-17)
+
+- Repo live + private: https://github.com/talismanlabs/talisman-v1 (`main` pushed).
+- CI green on `main`: `deterministic-checks` ✓ and `gitleaks` ✓.
+- Branch protection / rulesets: **blocked** — GitHub returns 403 "Upgrade to GitHub Pro or make this
+  repository public." The merge-gate is therefore not yet mechanically enforced; CI still runs on
+  every PR and the slice-runner never self-merges, so the human-merge gate holds by process.
 
 ## Phase checklist
 
@@ -54,6 +63,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | Phases 0–1 established directly as the repository-constitution baseline rather than via PR-gated slices. | Bootstrap paradox: CI (the gate) needs pyproject/.importlinter/skeleton/toolchain to exist on `main` before any PR can be gated. Loop begins at Phase 2. | `docs/adr/0001-bootstrap-constitution.md` |
 | 2026-06-17 | Corrected `.importlinter` contract key from `kind` to `type`. | Import Linter 2.x rejects `kind`; the canonical artifact scaffold was buggy. | `.importlinter`; ADR-0001 |
 | 2026-06-17 | Baseline `pyproject` declares dev dependencies only; runtime deps added per-slice. | Coding standard: do not add runtime dependencies unless a slice needs them. | `pyproject.toml` |
+| 2026-06-17 | Branch-protection posture pending user decision. | Enforced protection/rulesets require GitHub Pro on private repos (HTTP 403 on free plan). Options: upgrade to Pro, make repo public, or run with process discipline (CI advisory + human-only merge). | this ledger |
 
 ## Risk register
 
