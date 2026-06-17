@@ -43,3 +43,12 @@ source_modules =
     talisman_core.ports
 forbidden_modules =
     talisman_core.app
+
+[importlinter:contract:ports_do_not_import_infrastructure]
+name = Ports must not import concrete adapters or workers
+type = forbidden
+source_modules =
+    talisman_core.ports
+forbidden_modules =
+    talisman_core.adapters
+    talisman_core.workers

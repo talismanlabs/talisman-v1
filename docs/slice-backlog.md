@@ -20,12 +20,13 @@
 
 | Slice | Phase | Title | Lead | Reviewer | Status | Acceptance criteria |
 |---|---:|---|---|---|---|---|
-| S00.01 | 0 | Create repository skeleton | Claude Code | Codex CLI | not_started | Required folders, `AGENTS.md`, `CLAUDE.md`, and `pyproject.toml` exist. |
-| S00.02 | 0 | Add import-boundary contracts | Codex CLI | Claude Code | not_started | `.importlinter` exists and `lint-imports` passes. |
-| S00.03 | 0 | Add progress and review directories | Claude Code | Codex CLI | not_started | `docs/progress`, `docs/reviews`, and `docs/adr` exist with templates. |
-| S01.01 | 1 | Install local development environment | Codex CLI | Claude Code | not_started | `.venv` created and all deterministic checks execute. |
-| S02.01 | 2 | Implement domain models | Claude Code | Codex CLI | not_started | `Project`, `Gate`, `Artifact`, and `ReviewResult` models exist with tests. |
-| S02.02 | 2 | Implement ports | Codex CLI | Claude Code | not_started | Worker, approval, state, gateway, memory, and notifier ports exist. |
+| S00.01 | 0 | Create repository skeleton | Claude Code | Codex CLI | accepted | Required folders, `AGENTS.md`, `CLAUDE.md`, and `pyproject.toml` exist. (constitution baseline, ADR-0001) |
+| S00.02 | 0 | Add import-boundary contracts | Codex CLI | Claude Code | accepted | `.importlinter` exists and `lint-imports` passes. (constitution baseline) |
+| S00.03 | 0 | Add progress and review directories | Claude Code | Codex CLI | accepted | `docs/progress`, `docs/reviews`, and `docs/adr` exist with templates. (constitution baseline) |
+| S01.01 | 1 | Install local development environment | Codex CLI | Claude Code | accepted | `.venv` created and all deterministic checks execute. (constitution baseline) |
+| S02.01 | 2 | Implement domain models | Claude Code | Codex CLI | accepted | `Project`, `Gate`, `Artifact`, and `ReviewResult` models exist with tests. (merged PR #1) |
+| S02.02 | 2 | Implement ports | Codex CLI | Claude Code | accepted | Worker, approval, state, gateway, memory, and notifier ports exist. (merged PR #2) |
+| S02.03 | 2 | Harden ports import boundary | Claude Code | Codex CLI | review_ready | `.importlinter` forbids `ports` importing `adapters`/`workers`; `lint-imports` passes (from S02.02 review finding R1). |
 | S03.01 | 3 | Implement LangGraph spiral state | Claude Code | Codex CLI | not_started | Serializable state schema and basic graph compile. |
 | S03.02 | 3 | Add approval interrupt and resume | Codex CLI | Claude Code | not_started | Fake approval gate pauses and resumes after decision. |
 | S04.01 | 4 | Add SQLite migrations | Claude Code | Codex CLI | not_started | Database initializes idempotently. |
