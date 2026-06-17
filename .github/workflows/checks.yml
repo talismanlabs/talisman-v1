@@ -25,10 +25,8 @@ jobs:
           python-version: "3.12"
           enable-cache: true
 
-      - name: Create environment (dev toolchain only)
-        run: |
-          uv venv
-          uv pip install -e ".[dev]"
+      - name: Install dev toolchain (into the venv created by setup-uv)
+        run: uv pip install -e ".[dev]"
 
       - name: Run deterministic checks (ruff, ruff-format, mypy, pytest, lint-imports)
         run: ./scripts/checks.sh
