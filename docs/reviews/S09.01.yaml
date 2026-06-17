@@ -1,0 +1,25 @@
+slice_id: S09.01
+lead_agent: claude_code
+review_agent: codex_cli
+status: approved
+findings: []
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  status: pass
+  notes: "Adapter imports only the gateway port types and httpx; no workflow/domain/policy code imports adapters or provider SDKs."
+security:
+  status: pass
+  notes: "Gateway secret is passed at construction time and used only as an HTTP header; no secrets are stored in source, tests, or logs."
+acceptance_criteria:
+  status: pass
+  notes: "Adds a gateway client adapter with injected transport, HTTP gateway transport, result parsing, dependency declaration, and focused tests."
+scope:
+  status: pass
+  notes: "Changes are limited to the gateway client adapter, its tests, and the required httpx dependency."
+open_risks: []
+recommendation: approve

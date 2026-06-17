@@ -6,12 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 8 — Inter-agent review protocol (final slice in review)
-- **Current slice:** S08.02 Enforce cross-family review — review_ready (PR open; Claude review: pass)
-- **Last completed slice:** S08.01 Structured review artifact format (merged, PR #14)
-- **Current blocker:** awaiting human review + merge of the S08.02 PR.
-- **Next human decision needed:** merge the S08.02 PR. That completes Phase 8; next is Phase 9
-  (Cost gateway) — a flagged spec gap, so the loop will halt and propose an ADR (plain-English brief).
+- **Current phase:** Phase 9 — Cost gateway (ADR-0004 accepted: direct, port-first)
+- **Current slice:** S09.01 Gateway adapter — review_ready (PR open; Codex review: approve)
+- **Last completed slice:** S08.02 Enforce cross-family review (merged, PR #15) — Phase 8 complete
+- **Current blocker:** awaiting human review + merge of the S09.01 PR.
+- **Next human decision needed:** merge the S09.01 PR; then S09.02 (budget circuit breakers — Codex
+  lead / Claude review), which completes Phase 9.
 
 ## Build harness status (2026-06-17)
 
@@ -34,8 +34,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 5 | Telegram approval interface | accepted | 2026-06-17 | 2026-06-17 |  |
 | 6 | Claude Code worker adapter | accepted | 2026-06-17 | 2026-06-17 |  |
 | 7 | Codex CLI worker adapter | accepted | 2026-06-17 | 2026-06-17 |  |
-| 8 | Inter-agent review protocol | in_progress | 2026-06-17 |  |  |
-| 9 | Cost gateway | not_started |  |  |  |
+| 8 | Inter-agent review protocol | accepted | 2026-06-17 | 2026-06-17 |  |
+| 9 | Cost gateway | in_progress | 2026-06-17 |  |  |
 | 10 | Security profile | not_started |  |  |  |
 | 11 | Scheduler and portfolio | not_started |  |  |  |
 | 12 | Observability | not_started |  |  |  |
@@ -63,7 +63,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S06.01 | 6 | Claude Code | Codex CLI | accepted | all five pass; 32 tests; WorkerPort contract via injected runner (no real CLI); argv-list (no shell) | `docs/reviews/S06.01.yaml` (pass) | none | merged (PR #12) |
 | 2026-06-17 | S07.01 | 7 | Codex CLI | Claude Code | accepted | all five pass; 35 tests; passes the SHARED worker contract; byte-faithful mirror of S06.01 (vendor argv only) | `docs/reviews/S07.01.yaml` (pass) | subprocess plumbing duplicated across workers — extract to workers/_subprocess once a 3rd lands (review finding) | merged (PR #13) |
 | 2026-06-17 | S08.01 | 8 | Claude Code | Codex CLI | accepted | all five pass; 38 tests; ReviewResult extended with Finding + pure dict round-trip; domain stays pure | `docs/reviews/S08.01.yaml` (accept) | Codex review terse (schema-drift follow-up still open) | merged (PR #14) |
-| 2026-06-17 | S08.02 | 8 | Codex CLI | Claude Code | review_ready | all five pass; 46 tests; pure policy — only an accepted cross-family review permits closure (fail-closed); all branches verified | `docs/reviews/S08.02.yaml` (pass) | low: agent_family unknown-path normalization asymmetry (unreachable today) | human review + merge of PR |
+| 2026-06-17 | S08.02 | 8 | Codex CLI | Claude Code | accepted | all five pass; 46 tests; pure policy — only an accepted cross-family review permits closure (fail-closed); all branches verified | `docs/reviews/S08.02.yaml` (pass) | low: agent_family unknown-path normalization asymmetry (unreachable today) | merged (PR #15) |
+| 2026-06-17 | S09.01 | 9 | Claude Code | Codex CLI | review_ready | all five pass; 48 tests; GatewayClient routes via GatewayPort (injected transport); httpx transport; core imports no provider SDK | `docs/reviews/S09.01.yaml` (approve) | none | human review + merge of PR |
 
 ## Decision log
 
@@ -77,6 +78,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | Made the repository public and applied a branch ruleset on `main`. | Enforced protection/rulesets are unavailable on free private repos (HTTP 403). User chose public over upgrading to Pro or running unprotected. Ruleset requires the CI checks + a PR and blocks direct/force pushes and deletion. | this ledger; repo ruleset |
 | 2026-06-17 | Approved ADR-0002 (Phase 3 LangGraph design); added `langgraph` as the first runtime dependency. | Resolves the Phase 3 spec gap (graph shape, gates→interrupt/resume, checkpointer injection, LangGraph/policy seam) before implementation; user merged the ADR PR. | `docs/adr/0002-langgraph-workflow-design.md`; PR #4 |
 | 2026-06-17 | Approved ADR-0003 (approval idempotency design). | Resolves the Phase 5 / S05.02 spec gap (idempotency-key scheme, INSERT-once dedup via gate_events UNIQUE, reordering guard, 72h TTL) before implementation; user merged the ADR PR. | `docs/adr/0003-approval-idempotency.md`; PR #10 |
+| 2026-06-17 | Approved ADR-0004 (cost gateway — direct, port-first). | Resolves the Phase 9 spec gap: gateway forwards directly to providers (no LiteLLM) behind the typed GatewayPort, LiteLLM swappable later. User chose this in a plain-English design review; added httpx in S09.01. | `docs/adr/0004-cost-gateway-direct.md`; PR #16 |
 
 ## Risk register
 
