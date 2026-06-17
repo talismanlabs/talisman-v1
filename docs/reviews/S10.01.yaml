@@ -1,0 +1,35 @@
+slice_id: S10.01
+lead_agent: claude_code
+review_agent: codex_cli
+verdict: approve
+summary: >-
+  The slice adds a narrowly scoped core credential-scrubbing helper with focused
+  tests. No correctness, architecture-boundary, security, or scope issues found.
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  result: pass
+  notes: >-
+    The new core security module imports only stdlib modules and does not bypass
+    ports or import adapters, workers, policies, or concrete implementation code.
+acceptance_criteria:
+  result: pass
+  notes: >-
+    The implementation provides the default scrubbed variable list, copy-based
+    environment scrubbing, current-process worker environment construction, and
+    tests for default and caller-supplied scrub lists.
+security:
+  result: pass
+  notes: >-
+    Long-lived provider and cloud credential names are removed from worker
+    environment copies, and tests use non-secret dummy values.
+scope:
+  result: pass
+  notes: >-
+    Changes are limited to the credential-scrubbing module and its tests.
+findings: []
+required_actions: []
