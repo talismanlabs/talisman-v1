@@ -36,8 +36,8 @@
 | S06.01 | 6 | Add Claude Code worker adapter | Claude Code | Codex CLI | accepted | Adapter passes worker contract tests. (workers/claude_code; injected runner; shared contract fixture; merged PR #12) |
 | S07.01 | 7 | Add Codex CLI worker adapter | Codex CLI | Claude Code | accepted | Adapter passes worker contract tests. (workers/codex_cli; reuses shared contract fixture; merged PR #13) |
 | S08.01 | 8 | Add structured review artifact format | Claude Code | Codex CLI | accepted | Reviews save status, findings, and required fixes. (domain Finding + ReviewResult.findings + dict round-trip; merged PR #14) |
-| S08.02 | 8 | Enforce cross-family review before acceptance | Codex CLI | Claude Code | review_ready | Slice cannot close without review artifact. (policies/review_enforcement; fail-closed; cross-family + accept required) |
-| S09.01 | 9 | Add gateway adapter | Claude Code | Codex CLI | not_started | Model calls route through gateway port. |
+| S08.02 | 8 | Enforce cross-family review before acceptance | Codex CLI | Claude Code | accepted | Slice cannot close without review artifact. (policies/review_enforcement; fail-closed; cross-family + accept required; merged PR #15) |
+| S09.01 | 9 | Add gateway adapter | Claude Code | Codex CLI | review_ready | Model calls route through gateway port. (adapters/gateway_client; injected transport + httpx; per ADR-0004) |
 | S09.02 | 9 | Add budget circuit breakers | Codex CLI | Claude Code | not_started | Simulated daily/monthly cap pauses work. |
 | S10.01 | 10 | Add credential proxy | Claude Code | Codex CLI | not_started | Worker environment lacks raw provider keys. |
 | S10.02 | 10 | Add egress allowlist | Codex CLI | Claude Code | not_started | Disallowed domain access fails in test profile. |
