@@ -1,0 +1,28 @@
+slice_id: S02.02
+lead_agent: codex_cli
+review_agent: claude_code
+status: pass
+recommendation: accept
+findings:
+  - id: R1
+    severity: low
+    finding: "Port purity is currently maintained by discipline rather than enforced by Import Linter. The .importlinter app_is_composition_root contract forbids talisman_core.ports from importing talisman_core.app, but no contract forbids ports from importing talisman_core.adapters or talisman_core.workers. The 'ports before adapters / ports must not import concrete adapters' guardrail is therefore not deterministically enforced for the ports layer. This slice itself is fully clean (ports import only stdlib/typing and talisman_core.domain), so this is an observation, not a defect in S02.02."
+    required_fix: "None for this slice. In a future import-boundary slice, add a forbidden contract preventing talisman_core.ports from importing talisman_core.adapters and talisman_core.workers so the guardrail is linter-enforced rather than review-enforced."
+architecture_boundary:
+  status: pass
+  notes: "All six required ports (WorkerPort, ApprovalPort, StatePort, GatewayPort, MemoryPort, NotifierPort) are typing.Protocol interfaces with bodies that are only `...`; no concrete implementation logic leaks in. Imports across all seven files are limited to stdlib/typing (__future__, dataclasses, pathlib, enum, datetime, typing) and talisman_core.domain. The single domain import (state.py: Gate, GateStatus, Project) is legitimate and exposed by domain/__init__.py. No adapters, workers, app, policies, workflow, or vendor/external libraries are imported."
+security:
+  status: pass
+  notes: "No secrets, credentials, or API keys present. No environment access, no file/network/subprocess/socket I/O, and no module-import-time side effects — all Protocol methods are stubs and all value objects are inert frozen dataclasses. WorkerResult's docstring cautions that worker output must pass through approval/review gates and must not be blindly executed, reinforcing the irreversible-actions guardrail at the interface level."
+acceptance_criteria:
+  status: pass
+  notes: "Acceptance criterion 'Worker, approval, state, gateway, memory, and notifier ports exist' is fully met. All six ports are Protocols re-exported from ports/__init__.py via a complete, alphabetized __all__. Value objects are frozen dataclasses, fully type-annotated, and consistent with the domain: enums use the (str, Enum) pattern matching domain/gate.py and domain/review_result.py, and state.py reuses domain GateStatus/Project/Gate rather than redefining them."
+scope:
+  status: pass
+  notes: "Changes confined to src/talisman_core/ports/: ports/__init__.py modified (re-exports) and six new modules added. No domain, tests, config (.importlinter, pyproject.toml), or other layers touched. No scope creep."
+deterministic_checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
