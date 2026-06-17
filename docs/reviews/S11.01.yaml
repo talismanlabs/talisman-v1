@@ -1,0 +1,23 @@
+slice_id: S11.01
+lead_agent: claude_code
+review_agent: codex_cli
+decision: approve
+findings: []
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  status: pass
+  notes: "Core scheduler code imports only stdlib dataclasses and does not depend on adapters, workers, concrete vendors, secrets, or irreversible actions."
+acceptance_criteria:
+  status: pass
+  notes: "Implements the default active-slot cap of 3, rejects invalid limits, starts tasks by priority then FIFO, frees slots on completion, and tests the cap behavior."
+security:
+  status: pass
+  notes: "No secrets, persistence, logging, external calls, or irreversible actions introduced."
+scope:
+  status: pass
+  notes: "Scope is limited to the new scheduler module and focused scheduler tests for S11.01."
