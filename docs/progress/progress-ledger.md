@@ -6,13 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 2 — Domain and ports (S02.03 hardening in review; Phase 3 design ADR proposed)
-- **Current slice:** S02.03 Harden ports import boundary — review_ready (PR open; Codex review: approve)
-- **Last completed slice:** S02.02 Implement ports (merged, PR #2)
-- **Current blocker:** awaiting human review + merge of the S02.03 PR, and human approval of ADR-0002
-  (Phase 3 LangGraph design).
-- **Next human decision needed:** merge the S02.03 PR; review/approve ADR-0002 so Phase 3 implementation
-  (S03.01 spiral state + graph, S03.02 interrupt/resume) can begin.
+- **Current phase:** Phase 3 — LangGraph workflow skeleton
+- **Current slice:** S03.01 LangGraph spiral state + graph compile — review_ready (PR open; Codex review: approve)
+- **Last completed slice:** S02.03 Harden ports import boundary (merged, PR #3) — Phase 2 complete
+- **Current blocker:** awaiting human review + merge of the S03.01 PR.
+- **Next human decision needed:** merge the S03.01 PR; the loop then continues with S03.02 (gate
+  interrupt + resume — Codex lead / Claude review).
 
 ## Build harness status (2026-06-17)
 
@@ -29,8 +28,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 |---:|---|---|---|---|---|
 | 0 | Repository constitution | accepted (constitution baseline) | 2026-06-17 | 2026-06-17 | pending |
 | 1 | Development environment | accepted (constitution baseline) | 2026-06-17 | 2026-06-17 | pending |
-| 2 | Domain and ports | in_progress | 2026-06-17 |  |  |
-| 3 | LangGraph workflow skeleton | not_started |  |  |  |
+| 2 | Domain and ports | accepted | 2026-06-17 | 2026-06-17 |  |
+| 3 | LangGraph workflow skeleton | in_progress | 2026-06-17 |  |  |
 | 4 | SQLite state and memory | not_started |  |  |  |
 | 5 | Telegram approval interface | not_started |  |  |  |
 | 6 | Claude Code worker adapter | not_started |  |  |  |
@@ -54,7 +53,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S01.01 | 1 | Claude Code (constitution) | pending human | accepted (baseline) | all five checks execute green via `scripts/checks.sh` | n/a (ADR-0001) | dev toolchain via uv; runtime deps deferred per-slice | — |
 | 2026-06-17 | S02.01 | 2 | Claude Code | Codex CLI | accepted | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.01.yaml` (accept) | Codex enriched review YAML vs template — align template (follow-up) | merged (PR #1) |
 | 2026-06-17 | S02.02 | 2 | Codex CLI | Claude Code | accepted | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.02.yaml` (accept) | R1 addressed by S02.03 | merged (PR #2) |
-| 2026-06-17 | S02.03 | 2 | Claude Code | Codex CLI | review_ready | all five pass; negative test confirms the new contract bites | `docs/reviews/S02.03.yaml` (approve) | none | human review + merge of PR |
+| 2026-06-17 | S02.03 | 2 | Claude Code | Codex CLI | accepted | all five pass; negative test confirms the new contract bites | `docs/reviews/S02.03.yaml` (approve) | none | merged (PR #3) |
+| 2026-06-17 | S03.01 | 3 | Claude Code | Codex CLI | review_ready | all five pass; graph compiles + walks lightweight (5) and full-spiral (9) to END | `docs/reviews/S03.01.yaml` (approve) | interrupt/resume deferred to S03.02 (by design); one narrow mypy ignore for langgraph add_node overload | human review + merge of PR |
 
 ## Decision log
 
@@ -66,6 +66,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | Corrected `.importlinter` contract key from `kind` to `type`. | Import Linter 2.x rejects `kind`; the canonical artifact scaffold was buggy. | `.importlinter`; ADR-0001 |
 | 2026-06-17 | Baseline `pyproject` declares dev dependencies only; runtime deps added per-slice. | Coding standard: do not add runtime dependencies unless a slice needs them. | `pyproject.toml` |
 | 2026-06-17 | Made the repository public and applied a branch ruleset on `main`. | Enforced protection/rulesets are unavailable on free private repos (HTTP 403). User chose public over upgrading to Pro or running unprotected. Ruleset requires the CI checks + a PR and blocks direct/force pushes and deletion. | this ledger; repo ruleset |
+| 2026-06-17 | Approved ADR-0002 (Phase 3 LangGraph design); added `langgraph` as the first runtime dependency. | Resolves the Phase 3 spec gap (graph shape, gates→interrupt/resume, checkpointer injection, LangGraph/policy seam) before implementation; user merged the ADR PR. | `docs/adr/0002-langgraph-workflow-design.md`; PR #4 |
 
 ## Risk register
 
