@@ -6,13 +6,13 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 2 — Domain and ports
-- **Current slice:** S02.02 Implement ports — review_ready (PR open; Claude review: accept)
-- **Last completed slice:** S02.01 Implement domain models (merged, PR #1)
-- **Current blocker:** awaiting human review + merge of the S02.02 pull request.
-- **Next human decision needed:** review + merge the S02.02 PR (cross-family review passed). Phase 2 then
-  completes; next is Phase 3 (LangGraph workflow skeleton) — a phase boundary AND a known spec gap, so
-  the loop will HALT there and propose an ADR rather than guess.
+- **Current phase:** Phase 2 — Domain and ports (S02.03 hardening in review; Phase 3 design ADR proposed)
+- **Current slice:** S02.03 Harden ports import boundary — review_ready (PR open; Codex review: approve)
+- **Last completed slice:** S02.02 Implement ports (merged, PR #2)
+- **Current blocker:** awaiting human review + merge of the S02.03 PR, and human approval of ADR-0002
+  (Phase 3 LangGraph design).
+- **Next human decision needed:** merge the S02.03 PR; review/approve ADR-0002 so Phase 3 implementation
+  (S03.01 spiral state + graph, S03.02 interrupt/resume) can begin.
 
 ## Build harness status (2026-06-17)
 
@@ -53,7 +53,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S00.03 | 0 | Claude Code (constitution) | pending human | accepted (baseline) | n/a | n/a (ADR-0001) | docs/progress, docs/reviews, docs/adr created with templates | — |
 | 2026-06-17 | S01.01 | 1 | Claude Code (constitution) | pending human | accepted (baseline) | all five checks execute green via `scripts/checks.sh` | n/a (ADR-0001) | dev toolchain via uv; runtime deps deferred per-slice | — |
 | 2026-06-17 | S02.01 | 2 | Claude Code | Codex CLI | accepted | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.01.yaml` (accept) | Codex enriched review YAML vs template — align template (follow-up) | merged (PR #1) |
-| 2026-06-17 | S02.02 | 2 | Codex CLI | Claude Code | review_ready | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.02.yaml` (accept) | R1 (low): ports purity is review-enforced, not linter-enforced — add ports→adapters/workers contract in a future slice | human review + merge of PR |
+| 2026-06-17 | S02.02 | 2 | Codex CLI | Claude Code | accepted | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.02.yaml` (accept) | R1 addressed by S02.03 | merged (PR #2) |
+| 2026-06-17 | S02.03 | 2 | Claude Code | Codex CLI | review_ready | all five pass; negative test confirms the new contract bites | `docs/reviews/S02.03.yaml` (approve) | none | human review + merge of PR |
 
 ## Decision log
 
@@ -75,5 +76,6 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Cost overrun during agentic implementation | medium | medium | Watch usage; per-slice diffs; (Phase 9 gateway does not govern bootstrap spend) | Pat | open |
 | Under-specified slices (Phases 3–5, 8–14) cause agent drift | high | medium | Slice-runner halts and writes a proposed ADR instead of guessing | agents | open |
 | Codex CLI headless implementation unreliable/costly | medium | medium | Fallback (ADR): Claude implements, Codex still reviews every slice | Pat / agents | open |
-| Port-layer purity enforced by review, not Import Linter | low | medium | Add a forbidden contract (ports → adapters/workers) in a future import-boundary slice (S02.02 review finding R1) | agents | open |
+| Port-layer purity enforced by review, not Import Linter | low | medium | Added `ports_do_not_import_infrastructure` Import Linter contract (S02.03); verified by negative test | agents | mitigated |
+| Review-artifact YAML schema drifts between reviewers (Codex/Claude improvise keys) | low | low | Align `docs/reviews/REVIEW-TEMPLATE.yaml` + pin the schema in both review prompts (follow-up) | agents | open |
 | Codex `workspace-write` sandbox blocked by bwrap (no loopback netns) in this env | low | low | Use `--sandbox danger-full-access` for Codex-led implementation; bounded by the outer environment + review + checks | agents | open |
