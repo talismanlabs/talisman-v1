@@ -30,8 +30,8 @@
 | S03.01 | 3 | Implement LangGraph spiral state | Claude Code | Codex CLI | accepted | Serializable state schema and basic graph compile. (per ADR-0002; merged PR #5) |
 | S03.02 | 3 | Add approval interrupt and resume | Codex CLI | Claude Code | accepted | Fake approval gate pauses and resumes after decision. (interrupt()/Command resume; per ADR-0002; merged PR #6) |
 | S04.01 | 4 | Add SQLite migrations | Claude Code | Codex CLI | accepted | Database initializes idempotently. (adapters/sqlite; canonical schema; merged PR #7) |
-| S04.02 | 4 | Add project event log | Codex CLI | Claude Code | review_ready | Events persist and can be queried by project. (SQLite events table + adapter) |
-| S05.01 | 5 | Add Telegram allowlist | Claude Code | Codex CLI | not_started | Non-allowlisted user is rejected. |
+| S04.02 | 4 | Add project event log | Codex CLI | Claude Code | accepted | Events persist and can be queried by project. (SQLite events table + adapter; merged PR #8) |
+| S05.01 | 5 | Add Telegram allowlist | Claude Code | Codex CLI | review_ready | Non-allowlisted user is rejected. (adapters/telegram; fail-closed) |
 | S05.02 | 5 | Add approval idempotency | Codex CLI | Claude Code | not_started | Duplicate approval messages do not double-advance state. |
 | S06.01 | 6 | Add Claude Code worker adapter | Claude Code | Codex CLI | not_started | Adapter passes worker contract tests. |
 | S07.01 | 7 | Add Codex CLI worker adapter | Codex CLI | Claude Code | not_started | Adapter passes worker contract tests. |
