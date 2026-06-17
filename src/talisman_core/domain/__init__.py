@@ -10,6 +10,8 @@ from talisman_core.domain.artifact import Artifact
 from talisman_core.domain.gate import Gate, GateStatus
 from talisman_core.domain.project import Project, WorkflowTier
 from talisman_core.domain.review_result import (
+    Finding,
+    FindingSeverity,
     ReviewRecommendation,
     ReviewResult,
     ReviewStatus,
@@ -17,6 +19,8 @@ from talisman_core.domain.review_result import (
 
 __all__ = [
     "Artifact",
+    "Finding",
+    "FindingSeverity",
     "Gate",
     "GateStatus",
     "Project",

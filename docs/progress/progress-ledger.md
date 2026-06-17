@@ -6,12 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 7 — Codex CLI worker adapter
-- **Current slice:** S07.01 Codex CLI worker adapter — review_ready (PR open; Claude review: pass)
-- **Last completed slice:** S06.01 Claude Code worker adapter (merged, PR #12) — Phase 6 complete
-- **Current blocker:** awaiting human review + merge of the S07.01 PR.
-- **Next human decision needed:** merge the S07.01 PR. That completes Phase 7; next is Phase 8
-  (Inter-agent review protocol) — S08.01 (Claude lead / Codex review).
+- **Current phase:** Phase 8 — Inter-agent review protocol
+- **Current slice:** S08.01 Structured review artifact format — review_ready (PR open; Codex review: accept)
+- **Last completed slice:** S07.01 Codex CLI worker adapter (merged, PR #13) — Phase 7 complete
+- **Current blocker:** awaiting human review + merge of the S08.01 PR.
+- **Next human decision needed:** merge the S08.01 PR; then S08.02 (enforce cross-family review before
+  acceptance — Codex lead / Claude review), which completes Phase 8.
 
 ## Build harness status (2026-06-17)
 
@@ -33,8 +33,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 4 | SQLite state and memory | accepted | 2026-06-17 | 2026-06-17 |  |
 | 5 | Telegram approval interface | accepted | 2026-06-17 | 2026-06-17 |  |
 | 6 | Claude Code worker adapter | accepted | 2026-06-17 | 2026-06-17 |  |
-| 7 | Codex CLI worker adapter | in_progress | 2026-06-17 |  |  |
-| 8 | Inter-agent review protocol | not_started |  |  |  |
+| 7 | Codex CLI worker adapter | accepted | 2026-06-17 | 2026-06-17 |  |
+| 8 | Inter-agent review protocol | in_progress | 2026-06-17 |  |  |
 | 9 | Cost gateway | not_started |  |  |  |
 | 10 | Security profile | not_started |  |  |  |
 | 11 | Scheduler and portfolio | not_started |  |  |  |
@@ -61,7 +61,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S05.01 | 5 | Claude Code | Codex CLI | accepted | all five pass; 26 tests (allowlisted accepted, non-allowlisted rejected, fail-closed, loader) | `docs/reviews/S05.01.yaml` (accept) | none | merged (PR #9) |
 | 2026-06-17 | S05.02 | 5 | Codex CLI | Claude Code | accepted | all five pass; 29 tests; INSERT-once dedup verified, error-code discrimination fail-safe (only UNIQUE swallowed) | `docs/reviews/S05.02.yaml` (pass) | no idempotency port yet; insert/advance not atomic — wiring slice to decide (review findings) | merged (PR #11) |
 | 2026-06-17 | S06.01 | 6 | Claude Code | Codex CLI | accepted | all five pass; 32 tests; WorkerPort contract via injected runner (no real CLI); argv-list (no shell) | `docs/reviews/S06.01.yaml` (pass) | none | merged (PR #12) |
-| 2026-06-17 | S07.01 | 7 | Codex CLI | Claude Code | review_ready | all five pass; 35 tests; passes the SHARED worker contract; byte-faithful mirror of S06.01 (vendor argv only) | `docs/reviews/S07.01.yaml` (pass) | subprocess plumbing duplicated across workers — extract to workers/_subprocess once a 3rd lands (review finding) | human review + merge of PR |
+| 2026-06-17 | S07.01 | 7 | Codex CLI | Claude Code | accepted | all five pass; 35 tests; passes the SHARED worker contract; byte-faithful mirror of S06.01 (vendor argv only) | `docs/reviews/S07.01.yaml` (pass) | subprocess plumbing duplicated across workers — extract to workers/_subprocess once a 3rd lands (review finding) | merged (PR #13) |
+| 2026-06-17 | S08.01 | 8 | Claude Code | Codex CLI | review_ready | all five pass; 38 tests; ReviewResult extended with Finding + pure dict round-trip; domain stays pure | `docs/reviews/S08.01.yaml` (accept) | Codex review terse (schema-drift follow-up still open) | human review + merge of PR |
 
 ## Decision log
 
