@@ -33,8 +33,8 @@
 | S04.02 | 4 | Add project event log | Codex CLI | Claude Code | accepted | Events persist and can be queried by project. (SQLite events table + adapter; merged PR #8) |
 | S05.01 | 5 | Add Telegram allowlist | Claude Code | Codex CLI | accepted | Non-allowlisted user is rejected. (adapters/telegram; fail-closed; merged PR #9) |
 | S05.02 | 5 | Add approval idempotency | Codex CLI | Claude Code | accepted | Duplicate approval messages do not double-advance state. (INSERT-once via gate_events UNIQUE; per ADR-0003; merged PR #11) |
-| S06.01 | 6 | Add Claude Code worker adapter | Claude Code | Codex CLI | review_ready | Adapter passes worker contract tests. (workers/claude_code; injected runner; shared contract fixture) |
-| S07.01 | 7 | Add Codex CLI worker adapter | Codex CLI | Claude Code | not_started | Adapter passes worker contract tests. |
+| S06.01 | 6 | Add Claude Code worker adapter | Claude Code | Codex CLI | accepted | Adapter passes worker contract tests. (workers/claude_code; injected runner; shared contract fixture; merged PR #12) |
+| S07.01 | 7 | Add Codex CLI worker adapter | Codex CLI | Claude Code | review_ready | Adapter passes worker contract tests. (workers/codex_cli; reuses shared contract fixture) |
 | S08.01 | 8 | Add structured review artifact format | Claude Code | Codex CLI | not_started | Reviews save status, findings, and required fixes. |
 | S08.02 | 8 | Enforce cross-family review before acceptance | Codex CLI | Claude Code | not_started | Slice cannot close without review artifact. |
 | S09.01 | 9 | Add gateway adapter | Claude Code | Codex CLI | not_started | Model calls route through gateway port. |

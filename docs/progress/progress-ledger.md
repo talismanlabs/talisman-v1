@@ -6,12 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 6 — Claude Code worker adapter
-- **Current slice:** S06.01 Claude Code worker adapter — review_ready (PR open; Codex review: pass)
-- **Last completed slice:** S05.02 Approval idempotency (merged, PR #11) — Phase 5 complete
-- **Current blocker:** awaiting human review + merge of the S06.01 PR.
-- **Next human decision needed:** merge the S06.01 PR. That completes Phase 6; next is Phase 7
-  (Codex CLI worker adapter) — S07.01 (Codex lead / Claude review), reusing the worker contract.
+- **Current phase:** Phase 7 — Codex CLI worker adapter
+- **Current slice:** S07.01 Codex CLI worker adapter — review_ready (PR open; Claude review: pass)
+- **Last completed slice:** S06.01 Claude Code worker adapter (merged, PR #12) — Phase 6 complete
+- **Current blocker:** awaiting human review + merge of the S07.01 PR.
+- **Next human decision needed:** merge the S07.01 PR. That completes Phase 7; next is Phase 8
+  (Inter-agent review protocol) — S08.01 (Claude lead / Codex review).
 
 ## Build harness status (2026-06-17)
 
@@ -32,8 +32,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 3 | LangGraph workflow skeleton | accepted | 2026-06-17 | 2026-06-17 |  |
 | 4 | SQLite state and memory | accepted | 2026-06-17 | 2026-06-17 |  |
 | 5 | Telegram approval interface | accepted | 2026-06-17 | 2026-06-17 |  |
-| 6 | Claude Code worker adapter | in_progress | 2026-06-17 |  |  |
-| 7 | Codex CLI worker adapter | not_started |  |  |  |
+| 6 | Claude Code worker adapter | accepted | 2026-06-17 | 2026-06-17 |  |
+| 7 | Codex CLI worker adapter | in_progress | 2026-06-17 |  |  |
 | 8 | Inter-agent review protocol | not_started |  |  |  |
 | 9 | Cost gateway | not_started |  |  |  |
 | 10 | Security profile | not_started |  |  |  |
@@ -60,7 +60,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S04.02 | 4 | Codex CLI | Claude Code | accepted | all five pass; 22 tests (cross-connection persistence, per-project isolation, stable ordering) | `docs/reviews/S04.02.yaml` (pass) | EventLog has no port yet — add one before the first core consumer (review finding) | merged (PR #8) |
 | 2026-06-17 | S05.01 | 5 | Claude Code | Codex CLI | accepted | all five pass; 26 tests (allowlisted accepted, non-allowlisted rejected, fail-closed, loader) | `docs/reviews/S05.01.yaml` (accept) | none | merged (PR #9) |
 | 2026-06-17 | S05.02 | 5 | Codex CLI | Claude Code | accepted | all five pass; 29 tests; INSERT-once dedup verified, error-code discrimination fail-safe (only UNIQUE swallowed) | `docs/reviews/S05.02.yaml` (pass) | no idempotency port yet; insert/advance not atomic — wiring slice to decide (review findings) | merged (PR #11) |
-| 2026-06-17 | S06.01 | 6 | Claude Code | Codex CLI | review_ready | all five pass; 32 tests; WorkerPort contract via injected runner (no real CLI); argv-list (no shell) | `docs/reviews/S06.01.yaml` (pass) | none | human review + merge of PR |
+| 2026-06-17 | S06.01 | 6 | Claude Code | Codex CLI | accepted | all five pass; 32 tests; WorkerPort contract via injected runner (no real CLI); argv-list (no shell) | `docs/reviews/S06.01.yaml` (pass) | none | merged (PR #12) |
+| 2026-06-17 | S07.01 | 7 | Codex CLI | Claude Code | review_ready | all five pass; 35 tests; passes the SHARED worker contract; byte-faithful mirror of S06.01 (vendor argv only) | `docs/reviews/S07.01.yaml` (pass) | subprocess plumbing duplicated across workers — extract to workers/_subprocess once a 3rd lands (review finding) | human review + merge of PR |
 
 ## Decision log
 
@@ -89,3 +90,4 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Codex `workspace-write` sandbox blocked by bwrap (no loopback netns) in this env | low | low | Use `--sandbox danger-full-access` for Codex-led implementation; bounded by the outer environment + review + checks | agents | open |
 | SQLite event log (S04.02) has no consuming port yet | low | low | Add an `EventLog` port in `talisman_core.ports` before any core layer consumes the log; app wires the adapter (S04.02 review finding) | agents | open |
 | Approval idempotency (S05.02) has no port; insert/advance not atomic | low | low | Add an idempotency port before a core consumer; the Telegram-wiring slice decides single-transaction vs recorded-row-as-replay-barrier (S05.02 review findings) | agents | open |
+| Worker subprocess plumbing (CommandResult/runner) duplicated across claude_code + codex_cli | low | low | Extract to a shared `talisman_core.workers._subprocess` module once a third worker lands (S07.01 review finding); duplication keeps vendor adapters decoupled for now | agents | open |

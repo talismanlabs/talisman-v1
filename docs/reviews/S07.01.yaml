@@ -1,0 +1,31 @@
+slice_id: S07.01
+lead_agent: codex_cli
+review_agent: claude_code
+status: pass
+summary: "No blocking findings. CodexCliWorker faithfully implements the WorkerPort protocol, mirroring the S06.01 ClaudeCodeWorker with only vendor-specific divergence (class name, worker_name 'codex_cli', docstrings, the ['codex', 'exec', prompt] argv, and summary text). Its contract test uses the SHARED assert_worker_contract fixture rather than a bespoke weaker check; additional tests verify the argv/workspace and nonzero-exit propagation. Scope is limited to two new files; the sibling adapter and conftest are untouched. The only observation is intentional duplication of the subprocess plumbing, recorded as a non-blocking info finding."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+  notes: "Re-ran ./scripts/checks.sh independently: ruff pass, ruff-format clean, mypy --strict 31 src files, pytest 35 passed, lint-imports 5 kept/0 broken. (mypy pointed directly at the test file reports no-untyped-def on pytest fixture params, but the canonical gate only type-checks src/talisman_core — out of scope, identical to the accepted S06.01 sibling-test pattern, not a regression.)"
+architecture_boundary:
+  status: pass
+  notes: "codex_cli.py imports only stdlib (subprocess, collections.abc, dataclasses, pathlib) plus talisman_core.ports.worker. It defines its OWN CommandResult/CommandRunner/_default_runner rather than importing from claude_code.py, so no worker-to-worker coupling is introduced. No leakage into domain/adapters/workflow/policies/app. lint-imports: 5 contracts, all kept."
+security:
+  status: pass
+  notes: "Subprocess uses an argv list (['codex', 'exec', prompt]) with shell=False; no shell=True, no string interpolation into a shell, so the prompt cannot inject shell commands. No secrets/credentials/env access. capture_output with a timeout; check=False surfaces a failing CLI as an exit code. The adapter does not execute worker-generated commands."
+correctness:
+  status: pass
+  notes: "run() reads the prompt from request.prompt_path, invokes the injected runner in request.workspace_path with request.timeout_seconds, writes captured stdout to '<slice_id>.transcript.txt' as the artifact, and returns a WorkerResult propagating exit_code with worker_name='codex_cli'. A byte-level diff vs claude_code.py shows the only substantive change is the vendor argv ('codex exec' vs 'claude -p'). Tests confirm the contract, exact argv + workspace cwd, and nonzero-exit propagation."
+scope:
+  status: pass
+  notes: "Only two new files: workers/codex_cli.py and tests/workers/test_codex_cli_worker.py. claude_code.py and conftest.py are unchanged; nothing else touched."
+acceptance_criteria:
+  status: pass
+  notes: "'Adapter passes worker contract tests' is met: test_codex_cli_worker_satisfies_worker_contract drives the worker through the shared assert_worker_contract fixture (WorkerResult type, worker_name=='codex_cli', transcript exists and is in artifact_paths, summary non-empty) and passes within the 35-test suite."
+findings:
+  - severity: info
+    finding: "CodexCliWorker duplicates the CommandResult value object, the CommandRunner type alias, and _default_runner verbatim from claude_code.py instead of sharing them; the two files are byte-identical apart from vendor-specific strings/argv."
+    required_fix: "None required for this slice. Judgment: duplication is acceptable as-is because it keeps the two vendor adapters fully decoupled (no worker imports another worker, preserving the import-boundary intent). Lean toward extracting CommandResult/CommandRunner/_default_runner into a single internal module (e.g. talisman_core.workers._subprocess) as a follow-up once a third worker lands. Non-blocking."
