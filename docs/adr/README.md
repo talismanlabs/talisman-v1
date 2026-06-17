@@ -20,4 +20,5 @@ decision log.
 ## Index
 
 - [ADR-0001: Repository-constitution baseline and the bootstrap paradox](0001-bootstrap-constitution.md)
-- [ADR-0002: Phase 3 LangGraph spiral workflow design](0002-langgraph-workflow-design.md) — *Proposed*
+- [ADR-0002: Phase 3 LangGraph spiral workflow design](0002-langgraph-workflow-design.md) — *Accepted*
+- [ADR-0003: Approval idempotency design](0003-approval-idempotency.md) — *Proposed*
