@@ -7,11 +7,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 
 - **Overall status:** in_progress
 - **Current phase:** Phase 2 — Domain and ports
-- **Current slice:** S02.01 Implement domain models — review_ready (PR open; Codex review: accept)
-- **Last completed slice:** S01.01 (repository-constitution baseline; see ADR-0001)
-- **Current blocker:** awaiting human review + merge of the S02.01 pull request.
-- **Next human decision needed:** review + merge the S02.01 PR (cross-family review passed); the loop
-  then continues with S02.02 (ports — Codex lead / Claude review).
+- **Current slice:** S02.02 Implement ports — review_ready (PR open; Claude review: accept)
+- **Last completed slice:** S02.01 Implement domain models (merged, PR #1)
+- **Current blocker:** awaiting human review + merge of the S02.02 pull request.
+- **Next human decision needed:** review + merge the S02.02 PR (cross-family review passed). Phase 2 then
+  completes; next is Phase 3 (LangGraph workflow skeleton) — a phase boundary AND a known spec gap, so
+  the loop will HALT there and propose an ADR rather than guess.
 
 ## Build harness status (2026-06-17)
 
@@ -51,8 +52,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S00.02 | 0 | Claude Code (constitution) | pending human | accepted (baseline) | lint-imports passes (4 contracts kept) | n/a (ADR-0001) | Fixed artifact bug: `.importlinter` used `kind`; Import Linter requires `type` | — |
 | 2026-06-17 | S00.03 | 0 | Claude Code (constitution) | pending human | accepted (baseline) | n/a | n/a (ADR-0001) | docs/progress, docs/reviews, docs/adr created with templates | — |
 | 2026-06-17 | S01.01 | 1 | Claude Code (constitution) | pending human | accepted (baseline) | all five checks execute green via `scripts/checks.sh` | n/a (ADR-0001) | dev toolchain via uv; runtime deps deferred per-slice | — |
-| 2026-06-17 | S02.01 | 2 | Claude Code | Codex CLI | review_ready | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.01.yaml` (accept) | Codex enriched review YAML vs template — align template (follow-up) | human review + merge of PR |
-| — | S02.02 | 2 | Codex CLI | Claude Code | not_started | — | — | next slice (reverse review direction) | run slice-runner after S02.01 merges |
+| 2026-06-17 | S02.01 | 2 | Claude Code | Codex CLI | accepted | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.01.yaml` (accept) | Codex enriched review YAML vs template — align template (follow-up) | merged (PR #1) |
+| 2026-06-17 | S02.02 | 2 | Codex CLI | Claude Code | review_ready | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.02.yaml` (accept) | R1 (low): ports purity is review-enforced, not linter-enforced — add ports→adapters/workers contract in a future slice | human review + merge of PR |
 
 ## Decision log
 
@@ -74,3 +75,5 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Cost overrun during agentic implementation | medium | medium | Watch usage; per-slice diffs; (Phase 9 gateway does not govern bootstrap spend) | Pat | open |
 | Under-specified slices (Phases 3–5, 8–14) cause agent drift | high | medium | Slice-runner halts and writes a proposed ADR instead of guessing | agents | open |
 | Codex CLI headless implementation unreliable/costly | medium | medium | Fallback (ADR): Claude implements, Codex still reviews every slice | Pat / agents | open |
+| Port-layer purity enforced by review, not Import Linter | low | medium | Add a forbidden contract (ports → adapters/workers) in a future import-boundary slice (S02.02 review finding R1) | agents | open |
+| Codex `workspace-write` sandbox blocked by bwrap (no loopback netns) in this env | low | low | Use `--sandbox danger-full-access` for Codex-led implementation; bounded by the outer environment + review + checks | agents | open |
