@@ -6,12 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 8 — Inter-agent review protocol
-- **Current slice:** S08.01 Structured review artifact format — review_ready (PR open; Codex review: accept)
-- **Last completed slice:** S07.01 Codex CLI worker adapter (merged, PR #13) — Phase 7 complete
-- **Current blocker:** awaiting human review + merge of the S08.01 PR.
-- **Next human decision needed:** merge the S08.01 PR; then S08.02 (enforce cross-family review before
-  acceptance — Codex lead / Claude review), which completes Phase 8.
+- **Current phase:** Phase 8 — Inter-agent review protocol (final slice in review)
+- **Current slice:** S08.02 Enforce cross-family review — review_ready (PR open; Claude review: pass)
+- **Last completed slice:** S08.01 Structured review artifact format (merged, PR #14)
+- **Current blocker:** awaiting human review + merge of the S08.02 PR.
+- **Next human decision needed:** merge the S08.02 PR. That completes Phase 8; next is Phase 9
+  (Cost gateway) — a flagged spec gap, so the loop will halt and propose an ADR (plain-English brief).
 
 ## Build harness status (2026-06-17)
 
@@ -62,7 +62,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S05.02 | 5 | Codex CLI | Claude Code | accepted | all five pass; 29 tests; INSERT-once dedup verified, error-code discrimination fail-safe (only UNIQUE swallowed) | `docs/reviews/S05.02.yaml` (pass) | no idempotency port yet; insert/advance not atomic — wiring slice to decide (review findings) | merged (PR #11) |
 | 2026-06-17 | S06.01 | 6 | Claude Code | Codex CLI | accepted | all five pass; 32 tests; WorkerPort contract via injected runner (no real CLI); argv-list (no shell) | `docs/reviews/S06.01.yaml` (pass) | none | merged (PR #12) |
 | 2026-06-17 | S07.01 | 7 | Codex CLI | Claude Code | accepted | all five pass; 35 tests; passes the SHARED worker contract; byte-faithful mirror of S06.01 (vendor argv only) | `docs/reviews/S07.01.yaml` (pass) | subprocess plumbing duplicated across workers — extract to workers/_subprocess once a 3rd lands (review finding) | merged (PR #13) |
-| 2026-06-17 | S08.01 | 8 | Claude Code | Codex CLI | review_ready | all five pass; 38 tests; ReviewResult extended with Finding + pure dict round-trip; domain stays pure | `docs/reviews/S08.01.yaml` (accept) | Codex review terse (schema-drift follow-up still open) | human review + merge of PR |
+| 2026-06-17 | S08.01 | 8 | Claude Code | Codex CLI | accepted | all five pass; 38 tests; ReviewResult extended with Finding + pure dict round-trip; domain stays pure | `docs/reviews/S08.01.yaml` (accept) | Codex review terse (schema-drift follow-up still open) | merged (PR #14) |
+| 2026-06-17 | S08.02 | 8 | Codex CLI | Claude Code | review_ready | all five pass; 46 tests; pure policy — only an accepted cross-family review permits closure (fail-closed); all branches verified | `docs/reviews/S08.02.yaml` (pass) | low: agent_family unknown-path normalization asymmetry (unreachable today) | human review + merge of PR |
 
 ## Decision log
 
@@ -92,3 +93,4 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | SQLite event log (S04.02) has no consuming port yet | low | low | Add an `EventLog` port in `talisman_core.ports` before any core layer consumes the log; app wires the adapter (S04.02 review finding) | agents | open |
 | Approval idempotency (S05.02) has no port; insert/advance not atomic | low | low | Add an idempotency port before a core consumer; the Telegram-wiring slice decides single-transaction vs recorded-row-as-replay-barrier (S05.02 review findings) | agents | open |
 | Worker subprocess plumbing (CommandResult/runner) duplicated across claude_code + codex_cli | low | low | Extract to a shared `talisman_core.workers._subprocess` module once a third worker lands (S07.01 review finding); duplication keeps vendor adapters decoupled for now | agents | open |
+| `agent_family` (S08.02) does not normalize unknown agent names (case/whitespace) | low | low | Normalize the fallback (`key = agent_name.strip().lower(); return map.get(key, key)`); unreachable today since all real agents are in the known map (S08.02 review finding) | agents | open |

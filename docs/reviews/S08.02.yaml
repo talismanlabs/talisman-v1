@@ -1,0 +1,35 @@
+slice_id: S08.02
+lead_agent: codex_cli
+review_agent: claude_code
+status: pass
+recommendation: accept
+summary: "Pure policy correctly enforces accepted cross-family review as a precondition for slice closure, satisfying 'Slice cannot close without review artifact.' All four block conditions (no artifact, same-family, non-accept recommendation, block status) and the single allow condition (cross-family + accept + non-block) were traced and verified empirically. Boundary is clean: stdlib + talisman_core.domain only, no I/O; lint-imports keeps all 5 contracts incl. policies_do_not_call_infrastructure. evaluate_slice_closure and ensure_slice_may_close are consistent (the raiser delegates to the evaluator). Tests are non-vacuous, covering every branch. One non-blocking low finding on unknown-agent normalization asymmetry, unreachable by any current code path."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+  notes: "Independently re-ran: pytest 46 passed (8 in the new test), lint-imports 5 kept / 0 broken across 32 files."
+architecture_boundary:
+  status: pass
+  notes: "review_enforcement.py imports only stdlib (dataclasses, typing.Final, __future__) plus talisman_core.domain. No adapters/workers/app/ports/security/observability/memory imports; no subprocess/Path/open/os/socket/env. Artifact file LOADING correctly out of scope (operates on an in-memory ReviewResult | None). policies/__init__.py re-exports with a matching __all__. lint-imports: 5 contracts kept."
+correctness:
+  status: pass
+  notes: "All branches verified by executing the policy. BLOCKS: None -> 'no review artifact saved'; same-family (claude/claude_code both anthropic; codex/openai both openai) -> cross-family reason; REVISE/REJECT -> recommendation reason; status BLOCK -> 'must not be block'. ALLOWS only cross-family + ACCEPT + non-block (PASS and PASS_WITH_NOTES permit). Branch ordering is safe; enum identity comparisons avoid string-equality pitfalls. ensure_slice_may_close delegates to evaluate_slice_closure so the two forms cannot diverge. Default is fail-closed."
+security:
+  status: pass
+  notes: "No secrets, credentials, environment, network, filesystem, or subprocess access; no irreversible actions; no `# type: ignore`. Pure function over frozen domain value objects; outputs a frozen ClosureDecision or a raised error."
+scope:
+  status: pass
+  notes: "Confined to src/talisman_core/policies/ (new review_enforcement.py + __init__.py export) and tests/policies/ (new test). No domain/adapter/worker/workflow/ports/app files touched. The untracked .claude/scheduled_tasks.lock is an unrelated harness artifact, not part of this slice."
+acceptance_criteria:
+  status: pass
+  notes: "'Slice cannot close without review artifact' is enforced: evaluate_slice_closure(None) -> allowed=False; ensure_slice_may_close(None) raises SliceClosureError. Also enforces guardrail #4 (opposite-family reviewer) by blocking same-family/non-accept/block reviews, so only a genuine accepted cross-family review permits closure."
+findings:
+  - severity: low
+    finding: "Normalization asymmetry in agent_family: the known-agent path lowercases+strips before lookup, but the unknown-agent fallback returns the raw name. Two references to the SAME unknown agent differing only by case/whitespace (e.g. 'Local' vs 'local') map to different family strings and would be treated as cross-family, letting a same-family review pass. Verified empirically. Unreachable today: every real agent is in the known map and no production code builds ReviewResult from free-form agent names."
+    required_fix: "Non-blocking. Hardening follow-up: normalize the fallback too, e.g. key = agent_name.strip().lower(); return _KNOWN_AGENT_FAMILIES.get(key, key), so unknown agents compare case/whitespace-insensitively and the fail-closed bias holds for that path."
+  - severity: info
+    finding: "The vendor-family map is a hard-coded two-vendor (anthropic/openai) allowlist embedded in the policy; an unrecognized agent falls back to being its own family."
+    required_fix: "None for this slice. The fallback bias is acceptable (unknown reviewer vs known lead is correctly cross-family; known-pair same-family is fully covered). Centralize agent->family knowledge if a third family is onboarded."
