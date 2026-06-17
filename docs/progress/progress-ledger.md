@@ -6,12 +6,13 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 4 — SQLite state and memory (final slice in review)
-- **Current slice:** S04.02 Project event log — review_ready (PR open; Claude review: pass)
-- **Last completed slice:** S04.01 SQLite migrations (merged, PR #7)
-- **Current blocker:** awaiting human review + merge of the S04.02 PR.
-- **Next human decision needed:** merge the S04.02 PR. That completes Phase 4; next is Phase 5
-  (Telegram approval interface) — S05.01 Telegram allowlist (Claude lead / Codex review).
+- **Current phase:** Phase 5 — Telegram approval interface
+- **Current slice:** S05.01 Telegram allowlist — review_ready (PR open; Codex review: accept)
+- **Last completed slice:** S04.02 Project event log (merged, PR #8) — Phase 4 complete
+- **Current blocker:** awaiting human review + merge of the S05.01 PR.
+- **Next human decision needed:** merge the S05.01 PR; then S05.02 (approval idempotency — Codex lead
+  / Claude review). NOTE: S05.02's idempotency-key scheme is a known spec gap; the loop may halt and
+  propose an ADR rather than guess.
 
 ## Build harness status (2026-06-17)
 
@@ -30,8 +31,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 1 | Development environment | accepted (constitution baseline) | 2026-06-17 | 2026-06-17 | pending |
 | 2 | Domain and ports | accepted | 2026-06-17 | 2026-06-17 |  |
 | 3 | LangGraph workflow skeleton | accepted | 2026-06-17 | 2026-06-17 |  |
-| 4 | SQLite state and memory | in_progress | 2026-06-17 |  |  |
-| 5 | Telegram approval interface | not_started |  |  |  |
+| 4 | SQLite state and memory | accepted | 2026-06-17 | 2026-06-17 |  |
+| 5 | Telegram approval interface | in_progress | 2026-06-17 |  |  |
 | 6 | Claude Code worker adapter | not_started |  |  |  |
 | 7 | Codex CLI worker adapter | not_started |  |  |  |
 | 8 | Inter-agent review protocol | not_started |  |  |  |
@@ -57,7 +58,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S03.01 | 3 | Claude Code | Codex CLI | accepted | all five pass; graph compiles + walks lightweight (5) and full-spiral (9) to END | `docs/reviews/S03.01.yaml` (approve) | one narrow mypy ignore for langgraph add_node overload | merged (PR #5) |
 | 2026-06-17 | S03.02 | 3 | Codex CLI | Claude Code | accepted | all five pass; 17 tests incl. gate pause + 4 resume routes (approve/revise/pause/reject) on MemorySaver | `docs/reviews/S03.02.yaml` (approve) | AT-04 durable resume deferred to Phase 4 (SqliteSaver, same interface) | merged (PR #6) |
 | 2026-06-17 | S04.01 | 4 | Claude Code | Codex CLI | accepted | all five pass; 19 tests (tables created + idempotent re-init preserves data) | `docs/reviews/S04.01.yaml` (pass) | SQLite placed in adapters/ (confirmed correct by reviewer) | merged (PR #7) |
-| 2026-06-17 | S04.02 | 4 | Codex CLI | Claude Code | review_ready | all five pass; 22 tests (cross-connection persistence, per-project isolation, stable ordering) | `docs/reviews/S04.02.yaml` (pass) | EventLog has no port yet — add one before the first core consumer (review finding) | human review + merge of PR |
+| 2026-06-17 | S04.02 | 4 | Codex CLI | Claude Code | accepted | all five pass; 22 tests (cross-connection persistence, per-project isolation, stable ordering) | `docs/reviews/S04.02.yaml` (pass) | EventLog has no port yet — add one before the first core consumer (review finding) | merged (PR #8) |
+| 2026-06-17 | S05.01 | 5 | Claude Code | Codex CLI | review_ready | all five pass; 26 tests (allowlisted accepted, non-allowlisted rejected, fail-closed, loader) | `docs/reviews/S05.01.yaml` (accept) | none | human review + merge of PR |
 
 ## Decision log
 
