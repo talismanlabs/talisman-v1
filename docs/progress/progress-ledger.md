@@ -6,13 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 10 — Security profile (credential scrub + egress allowlist)
-- **Current slice:** S10.01 Worker credential scrubbing — review_ready (PR open; Codex review: approve)
-- **Last completed slice:** S09.02 Budget circuit breakers (merged, PR #18) — Phase 9 complete
-- **Current blocker:** awaiting human review + merge of the S10.01 PR.
-- **Next human decision needed:** merge the S10.01 PR; then S10.02 (egress allowlist — Codex lead /
-  Claude review), which completes Phase 10. (Phase 10 slices are concretely specified — no ADR halt
-  needed; the deeper scoped-credential-issuance mechanism is a v1.1 concern since v1 workers self-auth.)
+- **Current phase:** Phase 10 — Security profile (final slice in review)
+- **Current slice:** S10.02 Egress allowlist — review_ready (PR open; Claude review: approve)
+- **Last completed slice:** S10.01 Worker credential scrubbing (merged, PR #19)
+- **Current blocker:** awaiting human review + merge of the S10.02 PR.
+- **Next human decision needed:** merge the S10.02 PR. That completes Phase 10; next is Phase 11
+  (Scheduler and portfolio) — S11.01 (Claude lead / Codex review). Phases 11–15 are well-specified.
 
 ## Build harness status (2026-06-17)
 
@@ -67,7 +66,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S08.02 | 8 | Codex CLI | Claude Code | accepted | all five pass; 46 tests; pure policy — only an accepted cross-family review permits closure (fail-closed); all branches verified | `docs/reviews/S08.02.yaml` (pass) | low: agent_family unknown-path normalization asymmetry (unreachable today) | merged (PR #15) |
 | 2026-06-17 | S09.01 | 9 | Claude Code | Codex CLI | accepted | all five pass; 48 tests; GatewayClient routes via GatewayPort (injected transport); httpx transport; core imports no provider SDK | `docs/reviews/S09.01.yaml` (approve) | none | merged (PR #17) |
 | 2026-06-17 | S09.02 | 9 | Codex CLI | Claude Code | accepted | all five pass; 52 tests; pre-call breaker pauses on daily/monthly hard-cap breach; UTC window verified; durable | `docs/reviews/S09.02.yaml` (approve) | TOCTOU under future concurrency (single-orchestrator v1 OK) | merged (PR #18) |
-| 2026-06-17 | S10.01 | 10 | Claude Code | Codex CLI | review_ready | all five pass; 55 tests; security/credentials strips raw provider/cloud secrets from worker env (D6) | `docs/reviews/S10.01.yaml` (approve) | scoped-credential issuance deferred to v1.1 (v1 workers self-auth) | human review + merge of PR |
+| 2026-06-17 | S10.01 | 10 | Claude Code | Codex CLI | accepted | all five pass; 55 tests; security/credentials strips raw provider/cloud secrets from worker env (D6) | `docs/reviews/S10.01.yaml` (approve) | scoped-credential issuance deferred to v1.1 (v1 workers self-auth) | merged (PR #19) |
+| 2026-06-17 | S10.02 | 10 | Codex CLI | Claude Code | review_ready | all five pass; 61 tests; default-deny egress allowlist; dot-boundary subdomain match — bypass classes empirically denied | `docs/reviews/S10.02.yaml` (approve) | reconcile host- vs squid domain-granularity when wiring the proxy (info) | human review + merge of PR |
 
 ## Decision log
 
@@ -100,3 +100,5 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Worker subprocess plumbing (CommandResult/runner) duplicated across claude_code + codex_cli | low | low | Extract to a shared `talisman_core.workers._subprocess` module once a third worker lands (S07.01 review finding); duplication keeps vendor adapters decoupled for now | agents | open |
 | `agent_family` (S08.02) does not normalize unknown agent names (case/whitespace) | low | low | Normalize the fallback (`key = agent_name.strip().lower(); return map.get(key, key)`); unreachable today since all real agents are in the known map (S08.02 review finding) | agents | open |
 | Budget breaker (S09.02) has a check-then-record TOCTOU gap under concurrency | low | low | Single-orchestrator v1 is unaffected; if the gateway becomes concurrent, enforce check+record in one transaction or via a serialized writer (S09.02 review open-risk) | agents | open |
+| Egress allowlist (S10.02) is host-granular; squid.conf is domain-granular | low | low | Python layer is the more restrictive (fail-safe); reconcile the two enforcement layers intentionally when wiring the egress proxy (S10.02 review info) | agents | open |
+| Scoped-credential issuance mechanism for workers not built (S10.01) | low | medium | v1 workers self-authenticate; design + build host-side scoped/short-lived credential issuance in v1.1 if/when the orchestrator brain or workers need proxied provider access | Pat / agents | open |

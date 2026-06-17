@@ -1,0 +1,34 @@
+slice_id: S10.02
+lead_agent: codex_cli
+review_agent: claude_code
+verdict: approve
+summary: "Pure, stdlib-only default-deny egress allowlist that resists every bypass class tested by running the actual code: suffix-not-subdomain (evilanthropic.com, notgithub.com, xgithub.com), allowlisted-string-in-middle (api.anthropic.com.evil.com, github.com.attacker.net), prefix tricks, plus port/userinfo/URL-ish/IDN-confusable/embedded-null hosts are all correctly DENIED, while exact entries and true dot-boundary subdomains are ALLOWED. Normalization is case-insensitive and strips one trailing root dot; empty/whitespace inputs fail closed (None raises AttributeError, not allow). is_allowed and ensure_allowed are consistent; EgressDenied names the host. Two non-blocking informational notes only."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+  note: "Authoritative deterministic gate already green (ruff, ruff-format, mypy --strict, pytest 61 passed, lint-imports 5 contracts). This review independently verified the SECURITY behavior by executing the policy code against adversarial inputs."
+architecture_boundary:
+  result: pass
+  notes: "egress.py imports only stdlib (__future__, collections.abc.Iterable); no domain/ports/adapters/workers/app/vendor imports, no I/O or network. Pure policy in the security layer. lint-imports still 5 contracts."
+correctness:
+  result: pass
+  notes: "A host is allowed only when the normalized host equals a normalized entry or ends with '.' + entry (true dot boundary). Empty entries are skipped (`if not normalized_entry: continue`), so a stray empty allowlist string cannot match-all. Normalization lowercases and removes exactly one trailing dot. Default list is identical to the config template egress_allowlist (11 entries). Style mirrors S10.01 credentials.py."
+security:
+  result: pass
+  notes: "Default-deny confirmed: any host with no matching entry returns False; ensure_allowed raises EgressDenied with an informative, host-naming message. All adversarial bypass classes proven DENIED by running the code: suffix-not-subdomain, embedded/middle, prefix, host:port, userinfo (@), fragment (#), path (/), scheme-prefixed, IDN homoglyph, embedded NUL, control chars. Whitespace-padded and whitespace-only hosts denied. None input raises AttributeError (fails closed, not open). Fails in the safe direction in every case examined."
+scope:
+  result: pass
+  notes: "Only two new files: src/talisman_core/security/egress.py and tests/security/test_egress.py. No edits to docs/config/.importlinter/other modules. No `# type: ignore`. Docstrings present."
+acceptance_criteria:
+  result: pass
+  notes: "'Disallowed domain access fails in test profile.' satisfied: is_allowed returns False and ensure_allowed raises EgressDenied for disallowed hosts; tests assert this and explicitly assert the suffix-not-subdomain and allowlisted-string-in-middle bypasses are denied, plus case/trailing-dot normalization and the raise path."
+findings:
+  - severity: info
+    finding: "_normalize_host does not strip surrounding whitespace (only lowercases + removes one trailing dot). Harmless with the shipped allowlist (padded hosts are denied — the safe direction); the only quirk is a caller-supplied whitespace-only allowlist entry could exact-match a whitespace host. Config-hygiene edge, not a bypass."
+    required_fix: "None for this slice."
+  - severity: info
+    finding: "Allow-breadth diverges from the sibling squid.conf in the config template: the Python policy uses host-granularity entries (api.anthropic.com) while squid uses domain-granularity (.anthropic.com, allowing all subdomains incl. anthropic.com). The Python layer is the MORE restrictive of the two (fail-safe), so this does not affect S10.02. Worth a note for whoever wires the proxy so the two enforcement layers are reconciled intentionally."
+    required_fix: "None for this slice."
