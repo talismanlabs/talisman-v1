@@ -1,0 +1,27 @@
+slice_id: S06.01
+lead_agent: claude_code
+review_agent: codex_cli
+status: pass
+summary: "No blocking findings. The slice is narrowly scoped, keeps Claude Code subprocess logic in the workers layer, depends on the WorkerPort types, and includes focused contract tests with an injected runner."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  status: pass
+  notes: "The worker adapter imports only talisman_core.ports.worker types and keeps vendor-specific CLI execution in talisman_core.workers."
+security:
+  status: pass
+  notes: "No secrets are introduced. The subprocess invocation uses an argv list rather than shell interpolation."
+correctness:
+  status: pass
+  notes: "The adapter reads the prompt, invokes the injected runner in the requested workspace with the requested timeout, writes an auditable transcript artifact, and preserves nonzero exit codes."
+acceptance_criteria:
+  status: pass
+  notes: "The Claude Code worker adapter implements the WorkerPort contract behavior expected by the tests without invoking the real CLI."
+scope:
+  status: pass
+  notes: "Changes are limited to the Claude Code worker adapter and worker test support."
+findings: []
