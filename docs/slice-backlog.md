@@ -39,8 +39,8 @@
 | S08.02 | 8 | Enforce cross-family review before acceptance | Codex CLI | Claude Code | accepted | Slice cannot close without review artifact. (policies/review_enforcement; fail-closed; cross-family + accept required; merged PR #15) |
 | S09.01 | 9 | Add gateway adapter | Claude Code | Codex CLI | accepted | Model calls route through gateway port. (adapters/gateway_client; injected transport + httpx; per ADR-0004; merged PR #17) |
 | S09.02 | 9 | Add budget circuit breakers | Codex CLI | Claude Code | accepted | Simulated daily/monthly cap pauses work. (adapters/sqlite/budget; pre-call hard-cap breaker; budget_events; merged PR #18) |
-| S10.01 | 10 | Add credential proxy | Claude Code | Codex CLI | review_ready | Worker environment lacks raw provider keys. (security/credentials env-scrub; scoped issuance is v1.1) |
-| S10.02 | 10 | Add egress allowlist | Codex CLI | Claude Code | not_started | Disallowed domain access fails in test profile. |
+| S10.01 | 10 | Add credential proxy | Claude Code | Codex CLI | accepted | Worker environment lacks raw provider keys. (security/credentials env-scrub; scoped issuance is v1.1; merged PR #19) |
+| S10.02 | 10 | Add egress allowlist | Codex CLI | Claude Code | review_ready | Disallowed domain access fails in test profile. (security/egress; default-deny; dot-boundary subdomain match) |
 | S11.01 | 11 | Add portfolio scheduler | Claude Code | Codex CLI | not_started | Active worker slots cap is enforced. |
 | S11.02 | 11 | Add wait-time aging metrics | Codex CLI | Claude Code | not_started | Wait time tracked per project. |
 | S12.01 | 12 | Add health check and logs | Claude Code | Codex CLI | not_started | `/status` and log files expose health. |
