@@ -6,13 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 5 — Telegram approval interface
-- **Current slice:** S05.01 Telegram allowlist — review_ready (PR open; Codex review: accept)
-- **Last completed slice:** S04.02 Project event log (merged, PR #8) — Phase 4 complete
-- **Current blocker:** awaiting human review + merge of the S05.01 PR.
-- **Next human decision needed:** merge the S05.01 PR; then S05.02 (approval idempotency — Codex lead
-  / Claude review). NOTE: S05.02's idempotency-key scheme is a known spec gap; the loop may halt and
-  propose an ADR rather than guess.
+- **Current phase:** Phase 5 — Telegram approval interface (final slice in review)
+- **Current slice:** S05.02 Approval idempotency — review_ready (PR open; Claude review: pass)
+- **Last completed slice:** S05.01 Telegram allowlist (merged, PR #9)
+- **Current blocker:** awaiting human review + merge of the S05.02 PR.
+- **Next human decision needed:** merge the S05.02 PR. That completes Phase 5; next is Phase 6
+  (Claude Code worker adapter) — S06.01 (Claude lead / Codex review).
 
 ## Build harness status (2026-06-17)
 
@@ -59,7 +58,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S03.02 | 3 | Codex CLI | Claude Code | accepted | all five pass; 17 tests incl. gate pause + 4 resume routes (approve/revise/pause/reject) on MemorySaver | `docs/reviews/S03.02.yaml` (approve) | AT-04 durable resume deferred to Phase 4 (SqliteSaver, same interface) | merged (PR #6) |
 | 2026-06-17 | S04.01 | 4 | Claude Code | Codex CLI | accepted | all five pass; 19 tests (tables created + idempotent re-init preserves data) | `docs/reviews/S04.01.yaml` (pass) | SQLite placed in adapters/ (confirmed correct by reviewer) | merged (PR #7) |
 | 2026-06-17 | S04.02 | 4 | Codex CLI | Claude Code | accepted | all five pass; 22 tests (cross-connection persistence, per-project isolation, stable ordering) | `docs/reviews/S04.02.yaml` (pass) | EventLog has no port yet — add one before the first core consumer (review finding) | merged (PR #8) |
-| 2026-06-17 | S05.01 | 5 | Claude Code | Codex CLI | review_ready | all five pass; 26 tests (allowlisted accepted, non-allowlisted rejected, fail-closed, loader) | `docs/reviews/S05.01.yaml` (accept) | none | human review + merge of PR |
+| 2026-06-17 | S05.01 | 5 | Claude Code | Codex CLI | accepted | all five pass; 26 tests (allowlisted accepted, non-allowlisted rejected, fail-closed, loader) | `docs/reviews/S05.01.yaml` (accept) | none | merged (PR #9) |
+| 2026-06-17 | S05.02 | 5 | Codex CLI | Claude Code | review_ready | all five pass; 29 tests; INSERT-once dedup verified, error-code discrimination fail-safe (only UNIQUE swallowed) | `docs/reviews/S05.02.yaml` (pass) | no idempotency port yet; insert/advance not atomic — wiring slice to decide (review findings) | human review + merge of PR |
 
 ## Decision log
 
@@ -72,6 +72,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | Baseline `pyproject` declares dev dependencies only; runtime deps added per-slice. | Coding standard: do not add runtime dependencies unless a slice needs them. | `pyproject.toml` |
 | 2026-06-17 | Made the repository public and applied a branch ruleset on `main`. | Enforced protection/rulesets are unavailable on free private repos (HTTP 403). User chose public over upgrading to Pro or running unprotected. Ruleset requires the CI checks + a PR and blocks direct/force pushes and deletion. | this ledger; repo ruleset |
 | 2026-06-17 | Approved ADR-0002 (Phase 3 LangGraph design); added `langgraph` as the first runtime dependency. | Resolves the Phase 3 spec gap (graph shape, gates→interrupt/resume, checkpointer injection, LangGraph/policy seam) before implementation; user merged the ADR PR. | `docs/adr/0002-langgraph-workflow-design.md`; PR #4 |
+| 2026-06-17 | Approved ADR-0003 (approval idempotency design). | Resolves the Phase 5 / S05.02 spec gap (idempotency-key scheme, INSERT-once dedup via gate_events UNIQUE, reordering guard, 72h TTL) before implementation; user merged the ADR PR. | `docs/adr/0003-approval-idempotency.md`; PR #10 |
 
 ## Risk register
 
@@ -86,3 +87,4 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Review-artifact YAML schema drifts between reviewers (Codex/Claude improvise keys) | low | low | Align `docs/reviews/REVIEW-TEMPLATE.yaml` + pin the schema in both review prompts (follow-up) | agents | open |
 | Codex `workspace-write` sandbox blocked by bwrap (no loopback netns) in this env | low | low | Use `--sandbox danger-full-access` for Codex-led implementation; bounded by the outer environment + review + checks | agents | open |
 | SQLite event log (S04.02) has no consuming port yet | low | low | Add an `EventLog` port in `talisman_core.ports` before any core layer consumes the log; app wires the adapter (S04.02 review finding) | agents | open |
+| Approval idempotency (S05.02) has no port; insert/advance not atomic | low | low | Add an idempotency port before a core consumer; the Telegram-wiring slice decides single-transaction vs recorded-row-as-replay-barrier (S05.02 review findings) | agents | open |
