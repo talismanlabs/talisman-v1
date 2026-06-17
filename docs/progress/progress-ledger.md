@@ -6,12 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 9 — Cost gateway (ADR-0004 accepted: direct, port-first)
-- **Current slice:** S09.01 Gateway adapter — review_ready (PR open; Codex review: approve)
-- **Last completed slice:** S08.02 Enforce cross-family review (merged, PR #15) — Phase 8 complete
-- **Current blocker:** awaiting human review + merge of the S09.01 PR.
-- **Next human decision needed:** merge the S09.01 PR; then S09.02 (budget circuit breakers — Codex
-  lead / Claude review), which completes Phase 9.
+- **Current phase:** Phase 9 — Cost gateway (final slice in review)
+- **Current slice:** S09.02 Budget circuit breakers — review_ready (PR open; Claude review: approve)
+- **Last completed slice:** S09.01 Gateway adapter (merged, PR #17)
+- **Current blocker:** awaiting human review + merge of the S09.02 PR.
+- **Next human decision needed:** merge the S09.02 PR. That completes Phase 9; next is Phase 10
+  (Security profile / credential proxy) — the last flagged spec gap, so I'll bring a plain-English ADR brief.
 
 ## Build harness status (2026-06-17)
 
@@ -64,7 +64,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S07.01 | 7 | Codex CLI | Claude Code | accepted | all five pass; 35 tests; passes the SHARED worker contract; byte-faithful mirror of S06.01 (vendor argv only) | `docs/reviews/S07.01.yaml` (pass) | subprocess plumbing duplicated across workers — extract to workers/_subprocess once a 3rd lands (review finding) | merged (PR #13) |
 | 2026-06-17 | S08.01 | 8 | Claude Code | Codex CLI | accepted | all five pass; 38 tests; ReviewResult extended with Finding + pure dict round-trip; domain stays pure | `docs/reviews/S08.01.yaml` (accept) | Codex review terse (schema-drift follow-up still open) | merged (PR #14) |
 | 2026-06-17 | S08.02 | 8 | Codex CLI | Claude Code | accepted | all five pass; 46 tests; pure policy — only an accepted cross-family review permits closure (fail-closed); all branches verified | `docs/reviews/S08.02.yaml` (pass) | low: agent_family unknown-path normalization asymmetry (unreachable today) | merged (PR #15) |
-| 2026-06-17 | S09.01 | 9 | Claude Code | Codex CLI | review_ready | all five pass; 48 tests; GatewayClient routes via GatewayPort (injected transport); httpx transport; core imports no provider SDK | `docs/reviews/S09.01.yaml` (approve) | none | human review + merge of PR |
+| 2026-06-17 | S09.01 | 9 | Claude Code | Codex CLI | accepted | all five pass; 48 tests; GatewayClient routes via GatewayPort (injected transport); httpx transport; core imports no provider SDK | `docs/reviews/S09.01.yaml` (approve) | none | merged (PR #17) |
+| 2026-06-17 | S09.02 | 9 | Codex CLI | Claude Code | review_ready | all five pass; 52 tests; pre-call breaker pauses on daily/monthly hard-cap breach; UTC window verified; durable | `docs/reviews/S09.02.yaml` (approve) | TOCTOU under future concurrency (single-orchestrator v1 OK) | human review + merge of PR |
 
 ## Decision log
 
@@ -96,3 +97,4 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Approval idempotency (S05.02) has no port; insert/advance not atomic | low | low | Add an idempotency port before a core consumer; the Telegram-wiring slice decides single-transaction vs recorded-row-as-replay-barrier (S05.02 review findings) | agents | open |
 | Worker subprocess plumbing (CommandResult/runner) duplicated across claude_code + codex_cli | low | low | Extract to a shared `talisman_core.workers._subprocess` module once a third worker lands (S07.01 review finding); duplication keeps vendor adapters decoupled for now | agents | open |
 | `agent_family` (S08.02) does not normalize unknown agent names (case/whitespace) | low | low | Normalize the fallback (`key = agent_name.strip().lower(); return map.get(key, key)`); unreachable today since all real agents are in the known map (S08.02 review finding) | agents | open |
+| Budget breaker (S09.02) has a check-then-record TOCTOU gap under concurrency | low | low | Single-orchestrator v1 is unaffected; if the gateway becomes concurrent, enforce check+record in one transaction or via a serialized writer (S09.02 review open-risk) | agents | open |
