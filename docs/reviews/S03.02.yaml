@@ -1,0 +1,38 @@
+slice_id: S03.02
+lead_agent: codex_cli
+review_agent: claude_code
+decision: approve
+recommendation: "Approve and merge. The interrupt/resume gate is correct against ADR-0002 section 3 and the decision-routing table; all four routes were hand-traced and empirically verified. The single cosmetic stale-comment nit was fixed before merge."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  result: pass
+  notes: "workflow/spiral.py imports only __future__, stdlib, langgraph (graph + types.interrupt), and talisman_core.ports.approval.ApprovalDecision. No adapters/workers; ApprovalDecision from ports is allowed (ADR section 5). All 5 Import Linter contracts satisfied. Gate-ness and side effects enter via injected gate_phases/handlers (guardrail #2)."
+correctness:
+  result: pass
+  notes: "All four ApprovalDecision routes hand-traced and confirmed empirically on langgraph 1.2.5. approve: completes phase, clears pending_gate_id, advances. revise: clears pending_gate_id, leaves phase incomplete, re-enters and re-interrupts (bounded; always pauses for a human). pause: keeps pending_gate_id, stays interrupted, escapable by a later approve. reject: routes to END via the sticky last_decision short-circuit, phase left incomplete. The two-step gate entry (set pending, then interrupt on re-entry) is correct and bounded; pending_gate_id is checkpointed (verified via get_state). S03.01 ungated behavior is preserved (no prior test removed/weakened)."
+security:
+  result: pass
+  notes: "No secrets, network/file IO, or irreversible side effects; the node performs in-memory SpiralState updates only. build_spiral_graph fails closed (gate_phases without a checkpointer raises ValueError). The reject route is terminal."
+scope:
+  result: pass
+  notes: "Diff touches only src/talisman_core/workflow/spiral.py and tests/workflow/test_spiral.py. No other layers; the langgraph dependency was already added in S03.01."
+acceptance_criteria:
+  result: pass
+  notes: "'Fake approval gate pauses and resumes after decision' is met. A policy-injected gate pauses with pending_gate_id set and a surfaced GateInterruptPayload; the four routes resume per the ADR table. Tests use a real MemorySaver + thread_id config, assert interrupted-before-resume (snapshot.next == ('plan',)), and assert concrete post-resume state per route — meaningful and non-vacuous."
+deterministic_checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+findings:
+  - severity: nit
+    finding: "Stale inline comment referencing S03.01 on the PhaseHandler type."
+    required_fix: "Drop the S03.01 reference. Addressed before merge."
+open_risks:
+  - "Durable cross-restart resume (AT-04) is deferred to Phase 4 when a SqliteSaver replaces MemorySaver; the injection interface is identical (wiring, not redesign)."
