@@ -1,0 +1,16 @@
+slice_id: S02.03
+lead_agent: claude_code
+review_agent: codex_cli
+verdict: approve
+findings: []
+architecture_boundary_result: pass
+security_result: pass
+acceptance_criteria_result: pass
+scope_creep_result: pass
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+notes: "The .importlinter-only change adds a focused forbidden contract preventing talisman_core.ports from importing talisman_core.adapters or talisman_core.workers. This matches the slice intent, preserves the Import Linter boundary model, and introduces no security-sensitive behavior or unrelated scope."
