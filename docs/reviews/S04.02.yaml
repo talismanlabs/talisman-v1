@@ -1,0 +1,37 @@
+slice_id: S04.02
+lead_agent: codex_cli
+review_agent: claude_code
+verdict: pass
+decision: pass
+summary: "Adapter-layer SQLite project event log is correct, narrowly scoped, boundary-clean, and fully parameterized. Events persist across independent connections and are queried per-project in stable insertion order, satisfying the acceptance criteria. No new port is introduced; acceptable for an infra-local log with zero core consumers (non-blocking follow-up below)."
+findings:
+  - severity: info
+    finding: "The slice intentionally adds no consuming port. SQLiteEventLog/EventRecord are concrete adapter types with no core caller today, so guardrail #1 (ports before adapters) is not yet violated. The moment a core layer needs to append/read events, it must reach the log through a typed port in talisman_core.ports, not by importing this adapter directly (which lint-imports would forbid)."
+    required_fix: "None for this slice. Before any core-layer consumer, introduce an EventLog port and have app wire SQLiteEventLog to it."
+  - severity: info
+    finding: "Each append_event/list_events opens and closes its own sqlite3 connection. Functionally correct (WAL, commit on write) and consistent with migrations.py, but per-call connect churn is suboptimal under load."
+    required_fix: "None. Revisit connection reuse only if a future throughput requirement makes it material."
+architecture_boundary:
+  result: pass
+  notes: "event_log.py imports only stdlib (sqlite3, dataclasses, pathlib, typing.cast, __future__) plus the sibling adapters.sqlite.migrations module. No domain/ports/workflow/policies/workers/app/vendor imports. lint-imports remains 5 contracts kept."
+correctness:
+  result: pass
+  notes: "Empirically verified: write via one instance, read via a separate instance returns identical EventRecords (cross-connection persistence via commit). list_events filters by project_id (isolation) and ORDER BY event_id is stable. append_event guards lastrowid against None and re-selects to return the DB-populated event_id/created_at. cast(_EventRow, row) is sound (sqlite3 returns a 5-tuple matching column order); empty-project query returns []."
+security:
+  result: pass
+  notes: "All SQL values bound via ? placeholders; no string interpolation of values. INSERT and both SELECTs parameterized. events table + index use CREATE ... IF NOT EXISTS (idempotent). No secrets, dynamic SQL, or irreversible actions."
+scope:
+  result: pass
+  notes: "Only adapters/sqlite/ (new event_log.py, schema.sql events table + index) and tests/adapters/ (new event-log tests, updated EXPECTED_TABLES) touched. Deliberate no-new-port decision is in scope (see findings)."
+acceptance_criteria:
+  result: pass
+  notes: "'Events persist and can be queried by project' met: persistence proven across separate adapter instances/connections; list_events(project_id) returns only that project's events in stable order. Tests are meaningful (cross-connection equality, per-project isolation across interleaved inserts, id-sorted ordering)."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+  reviewer_verified_behavior: true
+open_risks:
+  - "No port abstraction yet; first core consumer must add an EventLog port rather than importing the adapter directly (non-blocking)."
