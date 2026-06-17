@@ -6,13 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 2 — Domain and ports (first autonomous slice-loop phase)
-- **Current slice:** S02.01 Implement domain models (next to run)
-- **Last completed slice:** S01.01 (established via repository-constitution baseline; see ADR-0001)
-- **Current blocker:** Stage A prerequisite — Codex CLI + `OPENAI_API_KEY` must be installed/set
-  before the cross-family loop can run (per the "true cross-family now" decision).
-- **Next human decision needed:** (1) approve the repository-constitution baseline and ADR-0001;
-  (2) install Codex CLI + set `OPENAI_API_KEY` so the cross-family loop may begin Phase 2.
+- **Current phase:** Phase 2 — Domain and ports
+- **Current slice:** S02.01 Implement domain models — review_ready (PR open; Codex review: accept)
+- **Last completed slice:** S01.01 (repository-constitution baseline; see ADR-0001)
+- **Current blocker:** awaiting human review + merge of the S02.01 pull request.
+- **Next human decision needed:** review + merge the S02.01 PR (cross-family review passed); the loop
+  then continues with S02.02 (ports — Codex lead / Claude review).
 
 ## Build harness status (2026-06-17)
 
@@ -29,7 +28,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 |---:|---|---|---|---|---|
 | 0 | Repository constitution | accepted (constitution baseline) | 2026-06-17 | 2026-06-17 | pending |
 | 1 | Development environment | accepted (constitution baseline) | 2026-06-17 | 2026-06-17 | pending |
-| 2 | Domain and ports | not_started |  |  |  |
+| 2 | Domain and ports | in_progress | 2026-06-17 |  |  |
 | 3 | LangGraph workflow skeleton | not_started |  |  |  |
 | 4 | SQLite state and memory | not_started |  |  |  |
 | 5 | Telegram approval interface | not_started |  |  |  |
@@ -52,7 +51,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S00.02 | 0 | Claude Code (constitution) | pending human | accepted (baseline) | lint-imports passes (4 contracts kept) | n/a (ADR-0001) | Fixed artifact bug: `.importlinter` used `kind`; Import Linter requires `type` | — |
 | 2026-06-17 | S00.03 | 0 | Claude Code (constitution) | pending human | accepted (baseline) | n/a | n/a (ADR-0001) | docs/progress, docs/reviews, docs/adr created with templates | — |
 | 2026-06-17 | S01.01 | 1 | Claude Code (constitution) | pending human | accepted (baseline) | all five checks execute green via `scripts/checks.sh` | n/a (ADR-0001) | dev toolchain via uv; runtime deps deferred per-slice | — |
-| — | S02.01 | 2 | Claude Code | Codex CLI | not_started | — | — | first real autonomous-loop slice | run slice-runner |
+| 2026-06-17 | S02.01 | 2 | Claude Code | Codex CLI | review_ready | ruff, ruff-format, mypy, pytest, lint-imports — all pass | `docs/reviews/S02.01.yaml` (accept) | Codex enriched review YAML vs template — align template (follow-up) | human review + merge of PR |
+| — | S02.02 | 2 | Codex CLI | Claude Code | not_started | — | — | next slice (reverse review direction) | run slice-runner after S02.01 merges |
 
 ## Decision log
 
