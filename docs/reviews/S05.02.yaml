@@ -1,0 +1,44 @@
+slice_id: S05.02
+lead_agent: codex_cli
+review_agent: claude_code
+verdict: pass
+decision: pass
+summary: "The SQLite approval-idempotency guard faithfully implements ADR-0003 sections 2 and 3. Duplicate suppression is enforced by the gate_events idempotency_key UNIQUE constraint (INSERT-once): first insert returns ADVANCED, a repeat of the same key returns DUPLICATE with no second write, and a non-pending gate returns IGNORED before any DB access. The UNIQUE-vs-other-IntegrityError discrimination was empirically verified fail-safe (only SQLITE_CONSTRAINT_UNIQUE/2067 is swallowed; NOT NULL/1299, CHECK/275, FK/787 all re-raise). Boundary-clean, fully parameterized, two new files. No new port (acceptable — no core consumer yet; required follow-up before one exists)."
+findings:
+  - severity: info
+    finding: "No consuming port. SQLiteApprovalIdempotency/ApprovalOutcome are concrete adapter types with zero core callers, so guardrail #1 is not yet violated. A core consumer must reach this via a typed port in talisman_core.ports, not by importing the adapter (forbidden contracts would reject it). Mirrors the S04.02 EventLog finding."
+    required_fix: "None for this slice. Before any core-layer consumer, introduce an idempotency port and have app wire SQLiteApprovalIdempotency to it."
+  - severity: info
+    finding: "record_and_advance returns ADVANCED as permission; it does not mutate SpiralState (matches ADR section 5). The gate_events insert commits independently of the later state advance, so they are not one atomic transaction. The failure direction is safe (a committed row blocks re-advance on retry), but the future wiring slice should treat the recorded-but-not-advanced window deliberately."
+    required_fix: "None for this slice. The end-to-end wiring slice should decide single-transaction atomicity vs relying on the recorded row as the replay barrier."
+  - severity: nit
+    finding: "The gate_id parameter is bound to the schema column gate_name. Mapping is correct (value is the gate identifier) but the param/column naming impedance is mildly confusing. Cosmetic."
+    required_fix: "None. Optionally reconcile naming when the gate_events schema or port is next touched."
+architecture_boundary:
+  result: pass
+  notes: "approval_idempotency.py imports only stdlib (sqlite3, enum, pathlib, __future__) plus the sibling adapters.sqlite.migrations module. No domain/ports/workflow/policies/workers/app/vendor imports. lint-imports: 5 contracts kept, 0 broken."
+correctness:
+  result: pass
+  notes: "Empirically verified against the real Phase 4 schema: (a) same key twice => [ADVANCED, DUPLICATE], exactly one gate_events row, no second write (duplicate path rolls back before commit); (b) two distinct keys => both ADVANCED, two rows; (c) non-pending gate => IGNORED before sqlite3.connect, zero rows. Cross-instance dedup holds (a fresh adapter still gets DUPLICATE on a key recorded elsewhere), confirming durability lives in the DB constraint, not process memory. After a DUPLICATE rollback the connection is clean. Only a single INSERT exists; no UPDATE/DELETE/DROP."
+security:
+  result: pass
+  notes: "Only SQL is a parameterized INSERT bound via ? placeholders; no string interpolation of values. _is_unique_constraint_error uses getattr(error, 'sqlite_errorcode', None) == SQLITE_CONSTRAINT_UNIQUE, so it is fail-safe: any other code or a missing attribute re-raises rather than silently dedup. NOT NULL/CHECK/FK violations are NOT masked. DUPLICATE path rolls back; connection.close() in finally. No secrets, dynamic SQL, or irreversible side effects."
+scope:
+  result: pass
+  notes: "Exactly two new files (approval_idempotency.py + its test). schema.sql and migrations.py are byte-identical to main (gate_events already existed from Phase 4 — this slice only writes to it). Deliberate no-new-port decision is in scope (see findings)."
+acceptance_criteria:
+  result: pass
+  notes: "'Duplicate approval messages do not double-advance state' is met: duplicate suppression is enforced at the DB layer via the idempotency_key UNIQUE constraint regardless of caller behavior; the reordering guard additionally blocks advancing a non-pending gate. Tests assert the exact [ADVANCED, DUPLICATE] sequence, advanced_count == 1, row count == 1 for duplicates; distinct keys => two ADVANCED + two rows; non-pending => IGNORED + zero rows, on a real on-disk SQLite database."
+adr_fidelity:
+  result: pass
+  notes: "Section 2 (INSERT-once via UNIQUE; duplicate is a constraint-enforced no-op, not agent-trusted) implemented exactly, including alternative 3's rejection of read-then-write. Section 3 (apply only to the current pending gate) implemented as an early IGNORED return before any DB access. Sections 1 (key generation) and 4 (72h TTL) are correctly NOT in this slice — the ADR defers them to a later wiring slice; their absence is faithful, not a gap. ApprovalOutcome maps cleanly onto advanced/duplicate/ignored."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+  reviewer_verified_behavior: true
+open_risks:
+  - "No port abstraction yet; first core consumer must add a typed idempotency port (non-blocking, mirrors S04.02)."
+  - "gate_events insert and the eventual SpiralState advance are separate operations; the future wiring slice must decide single-transaction atomicity vs the recorded row as the replay barrier (current failure direction is safe)."
