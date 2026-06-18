@@ -1,0 +1,35 @@
+slice_id: S11.02
+lead_agent: codex_cli
+review_agent: claude_code
+decision: approve
+findings:
+  - severity: info
+    finding: "Aging boundary uses an asymmetry: _aging_windows returns 0 when waited <= threshold (strict exceed for the first promotion) but floor-divides (waited // threshold) thereafter. Verified against a controlled clock: 24h -> 0 promotions, 48h -> 2. Never double-promotes or skips a window because promotions_due = floor(waited/threshold) - aging_promotions_applied reconciles to the true cumulative count. Correct and consistent; noted for transparency."
+    required_fix: "None."
+  - severity: info
+    finding: "Per-project ProjectWaitMetrics.last_wait_reason is last-writer-wins (started loop keeps the most recent started task's reason; the queued loop then overwrites it). Benign aggregation choice (the name implies 'most recent'); D8 only requires last_wait_reason be tracked, which it is faithfully per-task. No acceptance criterion affected."
+    required_fix: "None."
+correctness:
+  status: pass
+  notes: "Verified by running read-only scripts against an injected manual clock. Aging: (a) under/at threshold -> no promotion; (b) just over 1x -> +1 once; (c) repeat call same window -> 0 (aging_promotions_applied = aging_windows prevents double-promote); (d) 2x/3x -> cumulative +1 per crossed window, each applied once. promotions_due = aging_windows - aging_promotions_applied with storage of aging_promotions_applied = aging_windows is the correct idempotency mechanism; no off-by-one. Per-project metrics aggregate live queued waits (via clock) and recorded started waits; no double-count (a task moves out of _queued into started totals on start), no KeyError (empty scheduler returns {}). Negative elapsed (clock regression) clamped to 0.0. enqueue() defensively resets caller-supplied enqueued_at/total_wait_seconds/aging_promotions_applied."
+architecture_boundary:
+  status: pass
+  notes: "portfolio.py imports only stdlib (__future__, collections.abc, dataclasses, datetime). No domain/ports/adapters/workers/app/observability/vendor imports. lint-imports: 5 contracts kept. The only datetime.now() is inside _utc_now, used solely as the default injectable clock; all exercised logic reads self._clock() or the optional now= override."
+security:
+  status: pass
+  notes: "No secrets, env access, filesystem/network I/O, subprocess, logging, or print. No irreversible actions. Pure in-memory scheduling. No `# type: ignore`."
+scope:
+  status: pass
+  notes: "Only scheduler/portfolio.py and tests/scheduler/test_portfolio.py modified. New public surface (clock/aging_threshold kwargs, mark_blocked_on_user_approval, apply_aging, wait_metrics_by_project, ProjectWaitMetrics, wait-time fields) is confined to the scheduler. Docstrings present."
+acceptance_criteria:
+  status: pass
+  notes: "'Wait time tracked per project' satisfied via wait_metrics_by_project() returning ProjectWaitMetrics per project (queued + started, with totals/longest). D8 satisfied: a task waiting >24h is promoted one level per crossed window via apply_aging(); blocked-on-approval tasks (marked or passed) are skipped; all four D8 fields (enqueued_at, started_at, last_wait_reason, total_wait_seconds) are tracked. mark/unmark works for queued and active and raises on unknown ids; unblocking resumes aging over the full elapsed wait."
+s11_01_preserved:
+  status: pass
+  notes: "Active-slot cap still enforced with aging present (4 enqueued, limit 2 -> exactly 2 active). Priority-then-FIFO intact (tie-break (priority, -i) serves equal priority in enqueue order). task_id uniqueness / cap-bypass fix preserved (duplicates rejected against queued + active; active_count accurate). All scheduler tests pass."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
