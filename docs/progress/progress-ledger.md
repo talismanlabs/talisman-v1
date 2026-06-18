@@ -6,12 +6,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 10 — Security profile (final slice in review)
-- **Current slice:** S10.02 Egress allowlist — review_ready (PR open; Claude review: approve)
-- **Last completed slice:** S10.01 Worker credential scrubbing (merged, PR #19)
-- **Current blocker:** awaiting human review + merge of the S10.02 PR.
-- **Next human decision needed:** merge the S10.02 PR. That completes Phase 10; next is Phase 11
-  (Scheduler and portfolio) — S11.01 (Claude lead / Codex review). Phases 11–15 are well-specified.
+- **Current phase:** Phase 11 — Scheduler and portfolio
+- **Current slice:** S11.01 Portfolio scheduler — review_ready (PR open; Codex review: approve after fix)
+- **Last completed slice:** S10.02 Egress allowlist (merged, PR #20) — Phase 10 complete
+- **Current blocker:** awaiting human review + merge of the S11.01 PR.
+- **Next human decision needed:** merge the S11.01 PR; then S11.02 (wait-time aging metrics — Codex
+  lead / Claude review), which completes Phase 11.
 
 ## Build harness status (2026-06-17)
 
@@ -36,8 +36,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 7 | Codex CLI worker adapter | accepted | 2026-06-17 | 2026-06-17 |  |
 | 8 | Inter-agent review protocol | accepted | 2026-06-17 | 2026-06-17 |  |
 | 9 | Cost gateway | accepted | 2026-06-17 | 2026-06-17 |  |
-| 10 | Security profile | in_progress | 2026-06-17 |  |  |
-| 11 | Scheduler and portfolio | not_started |  |  |  |
+| 10 | Security profile | accepted | 2026-06-17 | 2026-06-17 |  |
+| 11 | Scheduler and portfolio | in_progress | 2026-06-17 |  |  |
 | 12 | Observability | not_started |  |  |  |
 | 13 | systemd service | not_started |  |  |  |
 | 14 | Bootstrap self-improvement project | not_started |  |  |  |
@@ -67,7 +67,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S09.01 | 9 | Claude Code | Codex CLI | accepted | all five pass; 48 tests; GatewayClient routes via GatewayPort (injected transport); httpx transport; core imports no provider SDK | `docs/reviews/S09.01.yaml` (approve) | none | merged (PR #17) |
 | 2026-06-17 | S09.02 | 9 | Codex CLI | Claude Code | accepted | all five pass; 52 tests; pre-call breaker pauses on daily/monthly hard-cap breach; UTC window verified; durable | `docs/reviews/S09.02.yaml` (approve) | TOCTOU under future concurrency (single-orchestrator v1 OK) | merged (PR #18) |
 | 2026-06-17 | S10.01 | 10 | Claude Code | Codex CLI | accepted | all five pass; 55 tests; security/credentials strips raw provider/cloud secrets from worker env (D6) | `docs/reviews/S10.01.yaml` (approve) | scoped-credential issuance deferred to v1.1 (v1 workers self-auth) | merged (PR #19) |
-| 2026-06-17 | S10.02 | 10 | Codex CLI | Claude Code | review_ready | all five pass; 61 tests; default-deny egress allowlist; dot-boundary subdomain match — bypass classes empirically denied | `docs/reviews/S10.02.yaml` (approve) | reconcile host- vs squid domain-granularity when wiring the proxy (info) | human review + merge of PR |
+| 2026-06-17 | S10.02 | 10 | Codex CLI | Claude Code | accepted | all five pass; 61 tests; default-deny egress allowlist; dot-boundary subdomain match — bypass classes empirically denied | `docs/reviews/S10.02.yaml` (approve) | reconcile host- vs squid domain-granularity when wiring the proxy (info) | merged (PR #20) |
+| 2026-06-17 | S11.01 | 11 | Claude Code | Codex CLI | review_ready | all five pass; 68 tests; active-slot cap + priority/FIFO. Codex BLOCKED a real cap-bypass (duplicate task_id); fixed (uniqueness + regression tests); re-review approve | `docs/reviews/S11.01.yaml` (approve after fix) | none | human review + merge of PR |
 
 ## Decision log
 
