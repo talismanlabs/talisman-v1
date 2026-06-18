@@ -1,8 +1,23 @@
-"""Tests for the portfolio scheduler's active-slot cap (slice S11.01)."""
+"""Tests for the portfolio scheduler."""
+
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from talisman_core.scheduler.portfolio import PortfolioScheduler, ScheduledTask
+
+
+class _ManualClock:
+    """Deterministic clock for scheduler tests."""
+
+    def __init__(self, current: datetime) -> None:
+        self.current = current
+
+    def __call__(self) -> datetime:
+        return self.current
+
+    def advance(self, delta: timedelta) -> None:
+        self.current += delta
 
 
 def test_active_slot_cap_is_enforced() -> None:
@@ -82,3 +97,99 @@ def test_task_id_reusable_after_completion() -> None:
     scheduler.complete("a")
     scheduler.enqueue(ScheduledTask("a", "p"))  # allowed now
     assert scheduler.queued_count == 1
+
+
+def test_wait_time_is_tracked_per_project() -> None:
+    """Project wait metrics include queued waits and waits recorded at start time."""
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    clock = _ManualClock(start)
+    scheduler = PortfolioScheduler(active_slot_limit=1, clock=clock)
+
+    scheduler.enqueue(ScheduledTask("p1-task", "p1"))
+    clock.advance(timedelta(minutes=10))
+    scheduler.enqueue(ScheduledTask("p2-task", "p2"))
+    clock.advance(timedelta(minutes=5))
+
+    queued_metrics = scheduler.wait_metrics_by_project()
+    assert queued_metrics["p1"].queued_count == 1
+    assert queued_metrics["p1"].started_count == 0
+    assert queued_metrics["p1"].total_wait_seconds == 900.0
+    assert queued_metrics["p1"].longest_wait_seconds == 900.0
+    assert queued_metrics["p2"].total_wait_seconds == 300.0
+
+    started = scheduler.start_next()
+
+    assert started is not None
+    assert started.enqueued_at == start
+    assert started.started_at == start + timedelta(minutes=15)
+    assert started.total_wait_seconds == 900.0
+    started_metrics = scheduler.wait_metrics_by_project()
+    assert started_metrics["p1"].queued_count == 0
+    assert started_metrics["p1"].started_count == 1
+    assert started_metrics["p1"].total_wait_seconds == 900.0
+
+
+def test_aging_promotes_task_past_threshold_one_priority_level() -> None:
+    """A queued task waiting past the threshold is promoted once."""
+    clock = _ManualClock(datetime(2026, 1, 1, tzinfo=UTC))
+    scheduler = PortfolioScheduler(active_slot_limit=1, clock=clock)
+    scheduler.enqueue(ScheduledTask("old", "p", priority=0))
+    clock.advance(timedelta(hours=25))
+    scheduler.enqueue(ScheduledTask("newer", "p", priority=1))
+
+    assert scheduler.apply_aging() == 1
+    started = scheduler.start_next()
+
+    assert started is not None
+    assert started.task_id == "old"
+    assert started.priority == 1
+
+
+def test_aging_does_not_promote_task_under_threshold() -> None:
+    """A queued task under the aging threshold keeps its original priority."""
+    clock = _ManualClock(datetime(2026, 1, 1, tzinfo=UTC))
+    scheduler = PortfolioScheduler(active_slot_limit=1, clock=clock)
+    scheduler.enqueue(ScheduledTask("young", "p", priority=0))
+    clock.advance(timedelta(hours=23, minutes=59))
+    scheduler.enqueue(ScheduledTask("newer", "p", priority=1))
+
+    assert scheduler.apply_aging() == 0
+    started = scheduler.start_next()
+
+    assert started is not None
+    assert started.task_id == "newer"
+    assert started.priority == 1
+
+
+def test_aging_does_not_promote_task_blocked_on_user_approval() -> None:
+    """A queued task blocked on user approval is skipped by aging."""
+    clock = _ManualClock(datetime(2026, 1, 1, tzinfo=UTC))
+    scheduler = PortfolioScheduler(active_slot_limit=1, clock=clock)
+    scheduler.enqueue(ScheduledTask("blocked", "p", priority=0))
+    scheduler.mark_blocked_on_user_approval("blocked")
+    clock.advance(timedelta(hours=25))
+    scheduler.enqueue(ScheduledTask("newer", "p", priority=1))
+
+    assert scheduler.apply_aging() == 0
+    started = scheduler.start_next()
+
+    assert started is not None
+    assert started.task_id == "newer"
+    assert started.priority == 1
+
+
+def test_aging_does_not_repeat_within_same_wait_window() -> None:
+    """Successive aging calls in one threshold window do not repeatedly promote."""
+    clock = _ManualClock(datetime(2026, 1, 1, tzinfo=UTC))
+    scheduler = PortfolioScheduler(active_slot_limit=1, clock=clock)
+    scheduler.enqueue(ScheduledTask("old", "p", priority=0))
+    clock.advance(timedelta(hours=25))
+
+    assert scheduler.apply_aging() == 1
+    assert scheduler.apply_aging() == 0
+    clock.advance(timedelta(hours=1))
+    assert scheduler.apply_aging() == 0
+    started = scheduler.start_next()
+
+    assert started is not None
+    assert started.priority == 1
