@@ -41,8 +41,8 @@
 | S09.02 | 9 | Add budget circuit breakers | Codex CLI | Claude Code | accepted | Simulated daily/monthly cap pauses work. (adapters/sqlite/budget; pre-call hard-cap breaker; budget_events; merged PR #18) |
 | S10.01 | 10 | Add credential proxy | Claude Code | Codex CLI | accepted | Worker environment lacks raw provider keys. (security/credentials env-scrub; scoped issuance is v1.1; merged PR #19) |
 | S10.02 | 10 | Add egress allowlist | Codex CLI | Claude Code | accepted | Disallowed domain access fails in test profile. (security/egress; default-deny; dot-boundary subdomain match; merged PR #20) |
-| S11.01 | 11 | Add portfolio scheduler | Claude Code | Codex CLI | review_ready | Active worker slots cap is enforced. (scheduler/portfolio; priority/FIFO; task_id uniqueness from review R1) |
-| S11.02 | 11 | Add wait-time aging metrics | Codex CLI | Claude Code | not_started | Wait time tracked per project. |
+| S11.01 | 11 | Add portfolio scheduler | Claude Code | Codex CLI | accepted | Active worker slots cap is enforced. (scheduler/portfolio; priority/FIFO; task_id uniqueness from review R1; merged PR #21) |
+| S11.02 | 11 | Add wait-time aging metrics | Codex CLI | Claude Code | review_ready | Wait time tracked per project. (per-project wait metrics + 24h aging; injected clock) |
 | S12.01 | 12 | Add health check and logs | Claude Code | Codex CLI | not_started | `/status` and log files expose health. |
 | S13.01 | 13 | Add systemd units | Codex CLI | Claude Code | not_started | Services install and restart locally. |
 | S14.01 | 14 | Run bootstrap self-improvement project | Claude Code | Codex CLI | not_started | TalisMan plans v1.1 improvements through gates. |
