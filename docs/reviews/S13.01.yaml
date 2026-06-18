@@ -1,0 +1,31 @@
+slice_id: S13.01
+lead_agent: codex_cli
+review_agent: claude_code
+review_date: 2026-06-18
+verdict: pass
+summary: "Pure systemd user-unit renderer for the gateway and orchestrator services. Both units declare on-failure restart with RestartSec, the orchestrator orders After and Wants the gateway, and hardening directives are present. Rendered deploy/systemd files byte-match both the renderer output and the canonical config templates. No embedded secrets; secrets referenced only via TALISMAN_HOME and %h paths. Module is stdlib-only, deterministic, free of filesystem/subprocess/systemctl side effects. No findings."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  status: pass
+  notes: "systemd_units.py resides in talisman_core.app (composition root) and imports only the standard library (dataclasses). No adapter/worker/vendor imports. lint-imports retains 5 contracts, all green."
+correctness:
+  status: pass
+  notes: "Restart=on-failure in both units with RestartSec (gateway 5, orchestrator 10). Orchestrator emits both After=<gateway> and Wants=<gateway> from the same configured name (verified to follow a custom gateway_unit_name). Type=simple, WorkingDirectory, ExecStart sane; gateway orders after network-online.target. render_systemd_units deterministic (same config -> identical output). Both rendered deploy/systemd/*.service byte-match render_gateway_unit()/render_orchestrator_unit() output exactly."
+security:
+  status: pass
+  notes: "No secret-like literals in the renderer or rendered units (greps for sk-/api-key/token/AKIA and 20+ char assignment regex all clean). Secrets referenced only by env var (TALISMAN_HOME) and %h-relative file paths; the gateway carries the canonical comment that secrets are file-based and not committed. The renderer performs no reads/writes/logging/printing of any secret. Hardening NoNewPrivileges=true and PrivateTmp=true on both; ReadWritePaths scoped to %h/TalisMan/state + %h/TalisMan/logs (gateway) and %h/TalisMan (orchestrator)."
+scope:
+  status: pass
+  notes: "Confined to src/talisman_core/app/systemd_units.py, tests/app/test_systemd_units.py, and deploy/systemd/{talisman-gateway.service,talisman.service}. No unrelated edits. Pure string rendering, no fs/subprocess/systemctl; no `# type: ignore`; functions and dataclasses docstring'd."
+acceptance_criteria:
+  status: pass
+  notes: "'Services install and restart locally' / AT-18 satisfied at the artifact level: both units declare Restart=on-failure with RestartSec so a killed process restarts, and both carry [Install] WantedBy=default.target for user-service install. Orchestrator After+Wants gateway ensures the credential/budget gateway comes up first. Rendered units faithful to the canonical templates (config-templates.md lines 257-305) with no dropped directives or altered paths."
+findings: []
+required_changes: []
+open_risks:
+  - "Restart behavior is asserted at the unit-file level only; actual kill-and-restart (AT-18 runtime) is exercised at the human install/approval gate (Phase 15 acceptance), not in CI, since pytest cannot run systemd --user here."

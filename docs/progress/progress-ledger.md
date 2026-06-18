@@ -6,12 +6,13 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 12 — Observability (single slice, in review)
-- **Current slice:** S12.01 Health check + structured logs — review_ready (PR open; Codex review: pass)
-- **Last completed slice:** S11.02 Wait-time aging metrics (merged, PR #22) — Phase 11 complete
-- **Current blocker:** awaiting human review + merge of the S12.01 PR.
-- **Next human decision needed:** merge the S12.01 PR. That completes Phase 12; next is Phase 13
-  (systemd auto-restart) — S13.01 (Codex lead / Claude review).
+- **Current phase:** Phase 13 — systemd service (single slice, in review)
+- **Current slice:** S13.01 systemd units — review_ready (PR open; Claude review: pass)
+- **Last completed slice:** S12.01 Health check + structured logs (merged, PR #23) — Phase 12 complete
+- **Current blocker:** awaiting human review + merge of the S13.01 PR.
+- **Next human decision needed:** merge the S13.01 PR. That completes Phase 13; next is Phase 14
+  (Bootstrap self-improvement project) — TalisMan plans its own v1.1 through the gated spiral. I expect
+  to bring a plain-English brief on the bootstrap-project scope (a flagged under-specified area).
 
 ## Build harness status (2026-06-17)
 
@@ -38,8 +39,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 9 | Cost gateway | accepted | 2026-06-17 | 2026-06-17 |  |
 | 10 | Security profile | accepted | 2026-06-17 | 2026-06-17 |  |
 | 11 | Scheduler and portfolio | accepted | 2026-06-17 | 2026-06-18 |  |
-| 12 | Observability | in_progress | 2026-06-18 |  |  |
-| 13 | systemd service | not_started |  |  |  |
+| 12 | Observability | accepted | 2026-06-18 | 2026-06-18 |  |
+| 13 | systemd service | in_progress | 2026-06-18 |  |  |
 | 14 | Bootstrap self-improvement project | not_started |  |  |  |
 | 15 | v1 release candidate | not_started |  |  |  |
 
@@ -70,7 +71,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S10.02 | 10 | Codex CLI | Claude Code | accepted | all five pass; 61 tests; default-deny egress allowlist; dot-boundary subdomain match — bypass classes empirically denied | `docs/reviews/S10.02.yaml` (approve) | reconcile host- vs squid domain-granularity when wiring the proxy (info) | merged (PR #20) |
 | 2026-06-17 | S11.01 | 11 | Claude Code | Codex CLI | accepted | all five pass; 68 tests; active-slot cap + priority/FIFO. Codex BLOCKED a real cap-bypass (duplicate task_id); fixed (uniqueness + regression tests); re-review approve | `docs/reviews/S11.01.yaml` (approve after fix) | none | merged (PR #21) |
 | 2026-06-18 | S11.02 | 11 | Codex CLI | Claude Code | accepted | all five pass; 73 tests; per-project wait metrics + 24h aging (once per window, injected clock); S11.01 preserved | `docs/reviews/S11.02.yaml` (approve) | 2 info notes (aging-boundary asymmetry is self-consistent; per-project last_wait_reason last-writer-wins) | merged (PR #22) |
-| 2026-06-18 | S12.01 | 12 | Claude Code | Codex CLI | review_ready | all five pass; 80 tests; health aggregation (worst-wins) + to_dict /status payload; structured JSON logging (injected sink+clock). NOTE: impl first committed to local main by mistake; moved to slice branch, main reset, re-reviewed | `docs/reviews/S12.01.yaml` (pass) | none | human review + merge of PR |
+| 2026-06-18 | S12.01 | 12 | Claude Code | Codex CLI | accepted | all five pass; 80 tests; health aggregation (worst-wins) + to_dict /status payload; structured JSON logging (injected sink+clock). NOTE: impl first committed to local main by mistake; moved to slice branch, main reset, re-reviewed | `docs/reviews/S12.01.yaml` (pass) | none | merged (PR #23) |
+| 2026-06-18 | S13.01 | 13 | Codex CLI | Claude Code | review_ready | all five pass; 85 tests; pure systemd unit renderer (gateway+orchestrator) — Restart=on-failure, orchestrator orders After+Wants gateway, no secret literals; deploy/systemd files byte-match canonical templates | `docs/reviews/S13.01.yaml` (pass) | AT-18 runtime restart exercised at operator/Phase-15 gate, not CI | human review + merge of PR |
 
 ## Decision log
 
@@ -105,3 +107,4 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Budget breaker (S09.02) has a check-then-record TOCTOU gap under concurrency | low | low | Single-orchestrator v1 is unaffected; if the gateway becomes concurrent, enforce check+record in one transaction or via a serialized writer (S09.02 review open-risk) | agents | open |
 | Egress allowlist (S10.02) is host-granular; squid.conf is domain-granular | low | low | Python layer is the more restrictive (fail-safe); reconcile the two enforcement layers intentionally when wiring the egress proxy (S10.02 review info) | agents | open |
 | Scoped-credential issuance mechanism for workers not built (S10.01) | low | medium | v1 workers self-authenticate; design + build host-side scoped/short-lived credential issuance in v1.1 if/when the orchestrator brain or workers need proxied provider access | Pat / agents | open |
+| systemd kill-and-restart (AT-18) verified only at unit-file level, not in CI | low | low | pytest cannot run `systemd --user`; exercise the real kill-and-restart during operator install and the Phase 15 acceptance run (AT-18) (S13.01 review open-risk) | Pat / agents | open |

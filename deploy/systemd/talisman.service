@@ -1,0 +1,20 @@
+[Unit]
+Description=TalisMan orchestration service
+After=talisman-gateway.service
+Wants=talisman-gateway.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/TalisMan
+ExecStart=%h/TalisMan/.venv/bin/python -m talisman_core.main --config %h/TalisMan/config/config.yaml
+Restart=on-failure
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+# Keep the service constrained to the TalisMan workspace.
+ReadWritePaths=%h/TalisMan
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

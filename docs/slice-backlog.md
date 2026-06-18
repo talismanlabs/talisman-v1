@@ -43,8 +43,8 @@
 | S10.02 | 10 | Add egress allowlist | Codex CLI | Claude Code | accepted | Disallowed domain access fails in test profile. (security/egress; default-deny; dot-boundary subdomain match; merged PR #20) |
 | S11.01 | 11 | Add portfolio scheduler | Claude Code | Codex CLI | accepted | Active worker slots cap is enforced. (scheduler/portfolio; priority/FIFO; task_id uniqueness from review R1; merged PR #21) |
 | S11.02 | 11 | Add wait-time aging metrics | Codex CLI | Claude Code | accepted | Wait time tracked per project. (per-project wait metrics + 24h aging; injected clock; merged PR #22) |
-| S12.01 | 12 | Add health check and logs | Claude Code | Codex CLI | review_ready | `/status` and log files expose health. (observability/health worst-wins + to_dict; observability/logs structured JSON) |
-| S13.01 | 13 | Add systemd units | Codex CLI | Claude Code | not_started | Services install and restart locally. |
+| S12.01 | 12 | Add health check and logs | Claude Code | Codex CLI | accepted | `/status` and log files expose health. (observability/health worst-wins + to_dict; observability/logs structured JSON; merged PR #23) |
+| S13.01 | 13 | Add systemd units | Codex CLI | Claude Code | review_ready | Services install and restart locally. (app/systemd_units renderer; Restart=on-failure; gateway-first ordering; deploy/systemd/*.service) |
 | S14.01 | 14 | Run bootstrap self-improvement project | Claude Code | Codex CLI | not_started | TalisMan plans v1.1 improvements through gates. |
 | S15.01 | 15 | Execute acceptance test plan | Codex CLI | Claude Code | not_started | Release checklist passes or has explicit waivers. |
 
