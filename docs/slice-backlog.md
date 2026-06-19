@@ -45,7 +45,7 @@
 | S11.02 | 11 | Add wait-time aging metrics | Codex CLI | Claude Code | accepted | Wait time tracked per project. (per-project wait metrics + 24h aging; injected clock; merged PR #22) |
 | S12.01 | 12 | Add health check and logs | Claude Code | Codex CLI | accepted | `/status` and log files expose health. (observability/health worst-wins + to_dict; observability/logs structured JSON; merged PR #23) |
 | S13.01 | 13 | Add systemd units | Codex CLI | Claude Code | accepted | Services install and restart locally. (app/systemd_units renderer; Restart=on-failure; gateway-first ordering; deploy/systemd/*.service; merged PR #24) |
-| S14.01 | 14 | Composition root + entrypoint | Claude Code | Codex CLI | not_started | App assembles + `talisman_core.main` entrypoint runs a deterministic cycle. (per ADR-0005) |
+| S14.01 | 14 | Composition root + entrypoint | Claude Code | Codex CLI | review_ready | App assembles + `talisman_core.main` entrypoint runs a deterministic cycle. (per ADR-0005; app/composition + main; graph+checkpointer+scheduler+logging) |
 | S14.02 | 14 | Governed self-improvement spiral run | Claude Code | Codex CLI | not_started | TalisMan completes one deterministic governed v1.1-planning spiral; gates fire; v1.1 backlog artifact produced. (per ADR-0005) |
 | S14.03 | 14 | Minimal lessons retrieval (conditional) | Codex CLI | Claude Code | not_started | Thin read path over the existing lessons table — only if S14.02 needs it. (per ADR-0005) |
 | S15.01 | 15 | Execute acceptance test plan | Codex CLI | Claude Code | not_started | Release checklist passes or has explicit waivers. |
