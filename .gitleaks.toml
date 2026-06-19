@@ -1,0 +1,41 @@
+# TalisMan gitleaks configuration.
+#
+# Used by the INCREMENTAL scan in .github/workflows/secret-scan.yml (new commits only).
+# It EXTENDS gitleaks' default credential rules and adds public-repo PII patterns
+# (emails, absolute home paths). Rationale: the realistic leak risk for this PUBLIC,
+# local-first orchestration repo is operator PII / host metadata, not just key-shaped
+# blobs — and the default ruleset has no rule for those. Provider keys are already
+# gitignored and absent from history (verified by the 2026-06-19 cross-family audit).
+
+title = "TalisMan gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "operator-home-path"
+description = "Absolute local home path (operator host detail leaking into a public repo)"
+regex = '''/(?:home|Users)/[a-z_][a-z0-9._-]{1,31}/'''
+tags = ["pii", "path"]
+
+[[rules]]
+id = "bare-email"
+description = "Bare email address — use a noreply/placeholder address in public docs"
+regex = '''[a-z0-9][a-z0-9._%+-]{0,63}@(?:[a-z0-9-]+\.)+[a-z]{2,24}'''
+tags = ["pii", "email"]
+
+[allowlist]
+description = "Intentional placeholders, CI paths, generated/immutable files, and redacted artifacts"
+regexes = [
+  '''sk-DEMO''',
+  '''replace-with-random-shared-secret''',
+  '''@example\.(com|org|net)''',
+  '''(?:noreply|no-reply)@''',
+  '''/(?:home|Users)/runner/''',
+]
+paths = [
+  '''uv\.lock''',                  # machine-generated; embeds upstream maintainer emails
+  '''\.gitleaks\.toml''',          # this config necessarily contains the patterns it matches
+  '''docs/talisman-v1/.*''',       # immutable upstream reference spec (not our authored code)
+  '''founder-audit-package/.*''',  # dated audit package — intentional, PII-redacted at HEAD
+]
