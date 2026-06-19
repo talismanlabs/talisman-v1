@@ -48,7 +48,8 @@
 | S14.01 | 14 | Composition root + entrypoint | Claude Code | Codex CLI | accepted | App assembles + `talisman_core.main` entrypoint runs a deterministic cycle. (per ADR-0005; app/composition + main; merged PR #26) |
 | S14.02 | 14 | Governed self-improvement spiral run | Claude Code | Codex CLI | accepted | TalisMan completes one deterministic governed v1.1-planning spiral; gates fire; v1.1 backlog artifact produced. (app/bootstrap + run_gated_project; merged PR #27) |
 | S14.03 | 14 | Minimal lessons retrieval (conditional) | Codex CLI | Claude Code | not_needed | S14.02 completed the governed spiral without lessons retrieval; deferred to v1.1 (tracked in v1.1 backlog). |
-| S15.01 | 15 | Execute acceptance test plan | Claude Code | Codex CLI | review_ready | Release checklist passes or has explicit waivers. (app/release; honest 5 pass / 8 component-verified / 7 waived after Codex blocked over-claims; release candidate pending walkthrough + waiver approvals) |
+| S15.01 | 15 | Execute acceptance test plan | Claude Code | Codex CLI | accepted | Release checklist passes or has explicit waivers. (app/release; honest 5 pass / 8 component-verified / 7 waived after Codex blocked over-claims; release candidate; merged PR #28) |
+| S15.02 | 15 | Formal v1 acceptance — record founder waiver approval | Claude Code | Codex CLI | review_ready | Driven by the founder's 2026-06-19 acceptance decision (durable artifact: `docs/release/v1-waiver-approval-2026-06-19.md`). **Acceptance criteria:** (1) a committed founder-approval artifact covers AT-04/12/16/17/19; (2) `app/release` + checklist + ledger mark v1 ACCEPTED; (3) the five end-to-end PASS criteria are unchanged (no grade inflation); (4) live-demonstrated items stay component-verified as **prototype/operator evidence** and flip to PASS only when their governed v1.1-P1 code lands; (5) no PII in committed evidence. |
 
 ## Slice rule
 

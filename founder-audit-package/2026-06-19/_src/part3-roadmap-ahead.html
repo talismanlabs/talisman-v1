@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body{font-family:'Liberation Sans',Arial,sans-serif;color:#1a1a2e;margin:40px;line-height:1.45;}
+h1{color:#0f3460;font-size:24pt;margin-bottom:0;}
+h2{color:#0f3460;border-bottom:2px solid #e94560;padding-bottom:4px;margin-top:26px;font-size:15pt;}
+.sub{color:#555;font-size:11pt;margin-top:2px;}
+table{border-collapse:collapse;width:100%;font-size:9.5pt;margin-top:8px;}
+th,td{border:1px solid #ccc;padding:5px 7px;text-align:left;vertical-align:top;}
+th{background:#0f3460;color:#fff;white-space:nowrap;}
+.p1{background:#fde9ec;font-weight:bold;}.p2{background:#fff6e6;}.p3{background:#eef5ee;}
+.callout{background:#eef3fb;border-left:4px solid #0f3460;padding:10px 14px;margin:12px 0;font-size:10pt;}
+.pb{page-break-before:always;}
+small{color:#666;}
+code{background:#f0f0f4;padding:1px 4px;border-radius:3px;font-size:9pt;}
+</style></head><body>
+
+<h1>TalisMan v1 — Founder Audit Package</h1>
+<p class="sub">Part 3 of 3 · Roadmap ahead · 2026-06-19</p>
+
+<div style="background:#eef7ee;border-left:4px solid #0a7d34;padding:10px 14px;margin:12px 0;font-size:10.5pt;">
+<b>✓ DECISION RECORDED 2026-06-19:</b> the founder approved the five waivers and confirmed the P1
+sequence below — TalisMan v1 is <b>ACCEPTED</b>. Durable record:
+<code>docs/release/v1-waiver-approval-2026-06-19.md</code>. The sign-off requested in this document
+has been granted; the sections below are retained as the original rationale.
+</div>
+
+<div class="callout">
+This roadmap is notable: <b>TalisMan produced the core of it itself</b> in Phase 14, running a governed
+planning spiral over its own improvement backlog. Today's live walkthrough then sharpened several items
+into precise, ready-to-build fixes.
+</div>
+
+<h2>Recommended sequence (the next few days)</h2>
+<table>
+<tr><th>Priority</th><th>Item</th><th>Why now / what the walkthrough found</th><th>Size</th></tr>
+<tr class="p1"><td>P1</td><td>Codex worker adapter fix</td><td>Diagnosed exactly today: invoke <code>codex exec --sandbox … --skip-git-repo-check -</code> with the prompt on <b>stdin</b> (not as an arg). One precise change; proven to work live.</td><td>S</td></tr>
+<tr class="p1"><td>P1</td><td>Wire credential scrub into the worker runner</td><td>The scrub function works (shown live), but isn't applied when spawning workers yet. Small wiring; closes AT-13 fully.</td><td>S</td></tr>
+<tr class="p1"><td>P1</td><td>Promote the live pieces to governed slices</td><td>Today's <code>--serve</code> mode, Telegram bot runtime, and egress proxy were built live; land them as reviewed PRs.</td><td>M</td></tr>
+<tr class="p2"><td>P2</td><td>Durable checkpointer (AT-04)</td><td>Swap in-memory MemorySaver for SQLite-backed, so a paused gate survives a crash/restart.</td><td>M</td></tr>
+<tr class="p2"><td>P2</td><td>StatePort SQLite store (AT-15)</td><td>Project-state persistence (not just the event log) needs a concrete StatePort implementation.</td><td>M</td></tr>
+<tr class="p2"><td>P2</td><td>Lessons retrieval + retrospectives (AT-16/17)</td><td>The <code>memory/</code> layer is still empty; build retrieval over the existing lessons table.</td><td>M</td></tr>
+<tr class="p3"><td>P3</td><td>Retry/jitter in the gateway (AT-12)</td><td>Full-jitter + Retry-After for transient provider errors.</td><td>S</td></tr>
+<tr class="p3"><td>P3</td><td>Automated incident dump (AT-19)</td><td>Trigger a state+log dump on catastrophic halt (manual runbook exists today).</td><td>S</td></tr>
+<tr class="p3"><td>P3</td><td>Integration tests for the cost gateway path</td><td>Wire budget breaker + pre-call accounting into a live model call path end-to-end.</td><td>M</td></tr>
+</table>
+
+<h2 class="pb">The five formal waivers — APPROVED 2026-06-19</h2>
+<p>Per the acceptance plan, each waiver needed the founder's explicit approval. <b>These were approved
+on 2026-06-19</b>, so TalisMan v1 is formally accepted (release candidate → accepted), with the items
+above tracked for v1.1.</p>
+<table>
+<tr><th>AT</th><th>Waived because</th><th>Compensating control</th></tr>
+<tr><td>AT-04</td><td>Durable checkpointer not wired (in-memory only)</td><td>Single supervised session; gates re-requestable</td></tr>
+<tr><td>AT-12</td><td>Retry/jitter not built</td><td>Manual re-run; low frequency at this scale</td></tr>
+<tr><td>AT-16</td><td>Retrospective generation not built</td><td>Manual retro; lessons table exists</td></tr>
+<tr><td>AT-17</td><td>Lessons retrieval not built</td><td>Schema exists; retrieval is scoped for v1.1</td></tr>
+<tr><td>AT-19</td><td>Automated incident dump not built</td><td>Operational runbook documents the manual procedure</td></tr>
+</table>
+
+<h2>Endorsement — granted 2026-06-19</h2>
+<p>Both decisions were made by the founder on 2026-06-19:</p>
+<ol>
+<li><b>The five waivers are approved</b> — this formally accepts v1.</li>
+<li><b>The P1 sequence is confirmed</b>, so the next slice loop starts on the highest-value fixes the walkthrough surfaced (and the five approved waivers become the first v1.1 feature project).</li>
+</ol>
+
+<p style="margin-top:20px;"><small>The full v1.1 backlog as TalisMan generated it is at <code>docs/talisman-v1.1-backlog.md</code>;
+the honest acceptance checklist is <code>docs/release/v1-acceptance-checklist.md</code>.</small></p>
+
+</body></html>

@@ -1,24 +1,29 @@
-"""v1 release-candidate acceptance results (slice S15.01).
+"""v1 acceptance results (slice S15.01 candidate → S15.02 formal acceptance).
 
 Encodes the outcome of the AT-01..AT-20 acceptance test plan against the built system as
 structured data, renders the release checklist, and is validated by tests (every
 acceptance test is accounted for; every waiver carries the required fields).
 
-This is an HONEST release-candidate accounting, corrected after an independent Codex
-cross-family review challenged over-claimed PASS grades (see docs/reviews/S15.01.yaml).
-The lead cannot honestly grade its own work as broadly passing; only end-to-end-proven
-criteria are PASS.
+This is an HONEST accounting. The release-candidate grading (S15.01) was corrected after an
+independent Codex cross-family review challenged over-claimed PASS grades
+(docs/reviews/S15.01.yaml): the lead cannot honestly grade its own work as broadly passing.
+S15.02 then records the founder's formal acceptance (docs/release/v1-waiver-approval-2026-06-19.md)
+but deliberately does NOT inflate grades: the only PASS criteria remain those proven end-to-end
+through merged code + CI/artifacts.
 
 Status legend:
-- PASS: verified end-to-end (CI checks, or on-disk evidence of the actual behavior).
-- COMPONENT_VERIFIED: the component is built and unit-tested, but is NOT yet integrated
-  into the running system and/or not live-verified — the AT's full behavior is unproven.
-  These are resolved by integration wiring plus the operator walkthrough.
-- WAIVED: the feature or runtime is genuinely not built; deferred to v1.1, with a waiver.
+- PASS: proven end-to-end through merged code plus CI checks or on-disk artifacts.
+- COMPONENT_VERIFIED: the component is built and unit-tested. Several were also demonstrated in
+  the 2026-06-19 operator walkthrough using PROTOTYPE runtime code built live OUTSIDE the
+  governed slice loop — that is recorded as prototype/operator evidence, NOT reviewed release
+  proof. Each flips to PASS only when its v1.1-P1 runtime code lands under governance.
+- WAIVED: the feature/runtime is genuinely not built; deferred to v1.1 with an approved waiver.
 
-Acceptance status: TalisMan v1 is a RELEASE CANDIDATE, not yet accepted. Acceptance
-requires (a) the operator walkthrough to verify the COMPONENT_VERIFIED items end-to-end and
-(b) the user's explicit approval of every waiver.
+Acceptance status: TalisMan v1 is ACCEPTED (2026-06-19; see the approval artifact above). The
+founder approved the five remaining waivers after the operator walkthrough. Acceptance stands on
+the five end-to-end PASS criteria plus the five approved waivers — it does NOT depend on the
+prototype walkthrough demonstrations, which are tracked separately and harden into PASS as the
+v1.1-P1 governed slices land.
 """
 
 from __future__ import annotations
@@ -56,9 +61,16 @@ class AcceptanceResult:
     waiver: Waiver | None = None
 
 
-# Waivers await the user's explicit approval during the walkthrough; until then the
-# release is not accepted (the acceptance plan requires real user approval per waiver).
-_PENDING = "Pat — PENDING approval (operator walkthrough)"
+# The founder approved every remaining waiver on 2026-06-19, recorded in the durable artifact
+# docs/release/v1-waiver-approval-2026-06-19.md, which formally accepts v1.
+_APPROVED = "Pat (founder) — APPROVED 2026-06-19 (docs/release/v1-waiver-approval-2026-06-19.md)"
+
+# Prototype/operator-walkthrough evidence (built live OUTSIDE governance; not reviewed proof).
+_PROTOTYPE = (
+    "Prototype/operator evidence only (built live outside the governed slice loop, 2026-06-19; "
+    "transcript: founder-audit-package/2026-06-19/walkthrough/part2-live-transcript.txt) — NOT "
+    "reviewed release proof; flips to PASS when its governed v1.1-P1 code lands."
+)
 
 ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
     AcceptanceResult(
@@ -77,7 +89,7 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
         "AT-03",
         "Unit tests",
         AcceptanceStatus.PASS,
-        "pytest: 100 tests pass (CI).",
+        "pytest: 100+ tests pass (CI).",
     ),
     AcceptanceResult(
         "AT-04",
@@ -89,22 +101,17 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
             "Durable LangGraph checkpointer (SqliteSaver) not wired; only in-memory MemorySaver.",
             "A crash mid-gate loses the paused workflow checkpoint.",
             "Single supervised session in v1; gates are re-requestable; durable checkpointer is "
-            "in the v1.1 backlog.",
-            _PENDING,
+            "the first v1.1 feature project.",
+            _APPROVED,
         ),
     ),
     AcceptanceResult(
         "AT-05",
         "Telegram allowlist",
-        AcceptanceStatus.WAIVED,
-        "Allowlist policy built + unit-tested (adapters/telegram/allowlist.py), but the live "
-        "Telegram bot runtime (command handling + logging) is NOT built.",
-        Waiver(
-            "Live Telegram bot runtime not built; only the allowlist policy exists.",
-            "No running command surface to reject a non-allowlisted account against.",
-            "The allowlist policy is ready to wire; live-telegram is in the v1.1 backlog.",
-            _PENDING,
-        ),
+        AcceptanceStatus.COMPONENT_VERIFIED,
+        "allowlist policy built + unit-tested (adapters/telegram/allowlist.py). The live "
+        "@Talisman0_bot runtime accepting an allowlisted account and rejecting others was shown "
+        f"in the operator walkthrough. {_PROTOTYPE} (bot runtime: adapters/telegram/bot.py).",
     ),
     AcceptanceResult(
         "AT-06",
@@ -117,22 +124,24 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
         "AT-07",
         "Claude Code worker",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "workers/claude_code.py implements WorkerPort (unit-tested). No live controlled-slice "
-        "run yet (transcript/artifacts) — pending the walkthrough.",
+        "workers/claude_code.py implements WorkerPort (unit-tested). A live controlled-slice run "
+        f"was shown in the operator walkthrough. {_PROTOTYPE} (runner wiring is v1.1-P1).",
     ),
     AcceptanceResult(
         "AT-08",
         "Codex CLI worker",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "workers/codex_cli.py implements WorkerPort (unit-tested). Strong practical evidence: "
-        "Codex CLI ran all 15 cross-family reviews this build. No live run THROUGH the adapter yet.",
+        "workers/codex_cli.py implements WorkerPort (unit-tested); Codex CLI ran all 25 "
+        "cross-family reviews this build. A live run THROUGH the adapter needs the corrected "
+        f"invocation (prompt on stdin + --skip-git-repo-check). {_PROTOTYPE} (the one-line "
+        "adapter fix is the first v1.1-P1 slice).",
     ),
     AcceptanceResult(
         "AT-09",
         "Cross-family review",
         AcceptanceStatus.PASS,
         "25 structured review artifacts in docs/reviews/ — every slice reviewed by the opposite "
-        "family, incl. this S15.01 review which blocked an over-claimed release grading.",
+        "family, incl. the S15.01 review which blocked an over-claimed release grading.",
     ),
     AcceptanceResult(
         "AT-10",
@@ -157,37 +166,33 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
             "Retry-with-jitter was not built in v1.",
             "Transient provider HTTP errors are not auto-retried.",
             "Manual re-run; low frequency at single-session scale; in the v1.1 backlog.",
-            _PENDING,
+            _APPROVED,
         ),
     ),
     AcceptanceResult(
         "AT-13",
         "Credential isolation",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "security/credentials.worker_environment scrubs long-lived keys (unit-tested, S10.01), "
-        "but it is NOT wired into the worker subprocess runners — keys are not yet proven absent "
-        "from a real worker environment (Codex S15.01 finding).",
+        "security/credentials.worker_environment scrubs long-lived keys (unit-tested, S10.01) and "
+        f"the scrub was shown in the operator walkthrough. {_PROTOTYPE} (wiring the scrub into the "
+        "worker subprocess runner is a v1.1-P1 slice).",
     ),
     AcceptanceResult(
         "AT-14",
         "Egress allowlist",
-        AcceptanceStatus.WAIVED,
-        "Default-deny egress policy built + unit-tested incl. bypass classes (security/egress.py), "
-        "but the enforcing proxy (squid) is NOT deployed.",
-        Waiver(
-            "Egress-enforcing proxy not deployed; only the host-side allowlist policy exists.",
-            "No proxy actually blocks a disallowed egress at runtime.",
-            "The policy is ready to wire to squid; proxy deployment is in the v1.1 backlog.",
-            _PENDING,
-        ),
+        AcceptanceStatus.COMPONENT_VERIFIED,
+        "Default-deny egress policy built + unit-tested incl. bypass classes (security/egress.py). "
+        "A CONNECT proxy calling is_allowed (tunnelling api.anthropic.com, blocking "
+        f"evil-exfiltration.example.com) was shown in the walkthrough. {_PROTOTYPE} (the enforcing "
+        "proxy is a v1.1-P1 slice).",
     ),
     AcceptanceResult(
         "AT-15",
         "SQLite persistence",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "Event log + schema persist across connections (unit-tested, S04). But there is NO "
-        "StatePort project-state store and no service-restart evidence (Codex S15.01 finding) — "
-        "full project-state survival is unproven.",
+        "Event log + schema persist across connections (unit-tested, S04); a fresh-handle restart "
+        f"was shown in the walkthrough. {_PROTOTYPE} A StatePort project-state store remains a v1.1 "
+        "item; flips to PASS when that store lands.",
     ),
     AcceptanceResult(
         "AT-16",
@@ -198,7 +203,7 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
             "Retro generation was not built in v1 (the memory/ layer is empty).",
             "No automatic retrospective at project close.",
             "Manual retro; the lessons table exists; in the v1.1 backlog.",
-            _PENDING,
+            _APPROVED,
         ),
     ),
     AcceptanceResult(
@@ -209,16 +214,17 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
         Waiver(
             "Lessons retrieval was not built in v1.",
             "Relevant lessons are not surfaced during intake.",
-            "The lessons schema exists; retrieval is the lessons-retrieval item in the v1.1 backlog.",
-            _PENDING,
+            "The lessons schema exists; retrieval is in the v1.1 backlog.",
+            _APPROVED,
         ),
     ),
     AcceptanceResult(
         "AT-18",
         "systemd recovery",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "Unit files built; Restart=on-failure + gateway-first ordering verified, byte-match "
-        "canonical (S13.01). No live kill-and-restart yet — pending systemd install (walkthrough).",
+        "Unit files built; Restart=on-failure + gateway-first ordering verified byte-match canonical "
+        "(S13.01). A live kill -9 → auto-restart (via `--serve`) was shown in the walkthrough. "
+        f"{_PROTOTYPE} (the --serve service runtime is a v1.1-P1 slice).",
     ),
     AcceptanceResult(
         "AT-19",
@@ -229,7 +235,7 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
             "Automated incident-dump trigger was not built in v1.",
             "No automatic state+log dump on catastrophic halt.",
             "The operational runbook documents a manual incident-dump procedure; automation in v1.1.",
-            _PENDING,
+            _APPROVED,
         ),
     ),
     AcceptanceResult(
@@ -254,18 +260,22 @@ def render_acceptance_checklist() -> str:
     """Render the v1 acceptance checklist as markdown — the release deliverable."""
     counts = status_counts()
     lines = [
-        "# TalisMan v1 acceptance checklist (release candidate)",
+        "# TalisMan v1 acceptance checklist — ACCEPTED 2026-06-19",
         "",
-        "_Produced by slice S15.01 against the AT-01..AT-20 acceptance test plan, corrected after "
-        "the independent Codex cross-family review (docs/reviews/S15.01.yaml) blocked over-claimed "
-        "PASS grades._",
+        "_Produced by slice S15.01 against the AT-01..AT-20 acceptance test plan (corrected after the "
+        "independent Codex cross-family review blocked over-claimed PASS grades), then formally "
+        "accepted in S15.02. Founder approval: docs/release/v1-waiver-approval-2026-06-19.md._",
         "",
-        f"**Summary:** {counts[AcceptanceStatus.PASS]} pass · "
-        f"{counts[AcceptanceStatus.COMPONENT_VERIFIED]} component-verified (await integration + "
-        f"operator walkthrough) · {counts[AcceptanceStatus.WAIVED]} waived to v1.1.",
+        f"**Summary:** v1 ACCEPTED (2026-06-19). {counts[AcceptanceStatus.PASS]} criteria PASS "
+        f"end-to-end (CI/artifacts) · {counts[AcceptanceStatus.COMPONENT_VERIFIED]} component-verified "
+        "(several also shown live in the operator walkthrough as prototype evidence; hardening tracked "
+        f"as v1.1-P1) · {counts[AcceptanceStatus.WAIVED]} waived with founder approval.",
         "",
-        "**Not yet accepted.** Acceptance requires the operator walkthrough (to verify the "
-        "component-verified items end-to-end) and the user's explicit approval of every waiver.",
+        "**ACCEPTED 2026-06-19.** Acceptance stands on the five end-to-end PASS criteria plus the five "
+        "founder-approved waivers (durable approval artifact: docs/release/v1-waiver-approval-2026-06-19.md). "
+        "The operator walkthrough demonstrated several component-verified behaviours using prototype "
+        "runtime code built live outside governance — recorded as prototype/operator evidence, not "
+        "reviewed release proof; each flips to PASS as its v1.1-P1 code lands under governance.",
         "",
         "| Test | Area | Status | Evidence |",
         "|---|---|---|---|",
@@ -275,7 +285,7 @@ def render_acceptance_checklist() -> str:
     )
     waived = [r for r in ACCEPTANCE_RESULTS if r.waiver is not None]
     if waived:
-        lines.extend(["", "## Waivers (await user approval)", ""])
+        lines.extend(["", "## Waivers (approved by founder 2026-06-19)", ""])
         for r in waived:
             waiver = r.waiver
             assert waiver is not None

@@ -1,0 +1,101 @@
+================================================================
+TalisMan v1 — FOUNDER AUDIT · Part 2 live command walkthrough
+Date: 2026-06-19   Host: Linux 6.17.0-19-generic
+================================================================
+
+### DEMO 1 — TalisMan assembles into a running service (AT-01/02/03 + entrypoint)
+$ python -m talisman_core.main --dry-run
+{"event": "dry_run_ok", "level": "info", "phases": ["discovery", "plan", "implementation", "review"], "timestamp": "2026-06-19T14:08:08.610665+00:00"}
+
+### DEMO 2 — the governed self-improvement spiral, FOR REAL (AT-20)
+TalisMan runs its first project — planning its own v1.1 — through its gates.
+$ python -c '<run_self_improvement_spiral>'
+phases completed: discovery -> synthesis -> plan -> red_team -> slice_approval
+GATES fired (via ApprovalPort interrupt/resume):
+   - talisman-v1.1:plan
+   - talisman-v1.1:slice_approval
+artifacts produced:
+   - discovery:9-candidates
+   - synthesis:grouped-improvements
+   - plan:planned:v1.1-plan
+   - red_team:risks-reviewed
+v1.1 backlog artifact: docs/talisman-v1.1-backlog.md ( 13 lines )
+
+### DEMO 3 — SQLite persistence survives a real restart (AT-15 mechanism)
+process 1 wrote spend; daily total = 4.25
+process 2 (fresh handle) reads daily total = 4.25 <- survived restart
+
+### DEMO 4 — Claude Code worker runs a controlled slice FOR REAL (AT-07)
+invoking real `claude -p` via ClaudeCodeWorker ...
+worker: claude_code | exit: 0
+transcript saved: WT-claude.transcript.txt ( 26 bytes )
+transcript content: TALISMAN-CLAUDE-WORKER-OK
+
+### DEMO 5 — Codex CLI worker runs a controlled slice FOR REAL (AT-08)
+invoking real `codex exec` via CodexCliWorker ...
+worker: codex_cli | exit: 1
+transcript saved: WT-codex.transcript.txt ( 0 bytes )
+transcript tail: (empty)
+
+### DEMO 6 — credential isolation: scrub removes long-lived keys (AT-13 mechanism)
+parent process holds secrets: ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY']
+scrubbed worker env holds  : [] <- long-lived keys removed
+
+### DEMO 7 — Telegram bot LIVE connection + allowlist enforcement (AT-05)
+getMe OK -> bot @Talisman0_bot (id [redacted-bot-id], is_bot=True)  <- live Telegram connection
+allowlist loaded: 1 authorized user(s)
+  your account              -> is_allowed = True  (ACCEPT)
+  an unknown account (99999)-> is_allowed = False  (REJECT)
+  ensure_allowed(99999) correctly raised: Telegram user 99999 is not allowlisted.
+
+### DEMO 8 — persistent --serve mode (prereq for systemd AT-18)
+$ python -m talisman_core.main --serve --heartbeat-seconds 1   (run 4s then SIGTERM)
+(timeout sent SIGTERM; service handled it)
+
+### DEMO 9 — Telegram inbound round-trip: accept allowlisted, reject others (AT-05 live)
+long-polling Telegram for your message (up to 30s) ...
+RECEIVED real message: text='/status'  (update 41782952)
+  -> sender IS allowlisted -> ACCEPTED, processed, and replied in your Telegram
+  -> under a restricted allowlist the SAME sender is REJECTED + logged: Telegram user [redacted-user-id] is not allowlisted.
+     (a non-allowlisted account never reaches command processing)
+
+### DEMO 10 — systemd auto-restart after a crash, FOR REAL (AT-18)
+installed unit -> $HOME/.config/systemd/user/talisman-demo.service (ExecStart: python -m talisman_core.main --serve)
+service is active, MainPID=1358619
+>>> kill -9 1358619   (simulating a crash)
+service is active, NEW MainPID=1358916
+AT-18 PASS ✔  systemd auto-restarted the crashed service (1358619 -> 1358916)
+--- journal (note the restart) ---
+   Jun 19 11:03:49 [redacted-host] systemd[1780]: Started talisman-demo.service - TalisMan demo service (AT-18 walkthrough).
+   Jun 19 11:03:49 [redacted-host] systemd[1780]: talisman-demo.service: Main process exited, code=killed, status=9/KILL
+   Jun 19 11:03:49 [redacted-host] systemd[1780]: talisman-demo.service: Failed with result 'signal'.
+   Jun 19 11:03:51 [redacted-host] systemd[1780]: talisman-demo.service: Scheduled restart job, restart counter is at 1.
+   Jun 19 11:03:51 [redacted-host] systemd[1780]: Started talisman-demo.service - TalisMan demo service (AT-18 walkthrough).
+cleaned up demo unit
+
+### DEMO 11 — Codex worker runs a controlled slice FOR REAL via corrected invocation (AT-08)
+invoking real `codex exec` (stdin) via CodexCliWorker ...
+worker: codex_cli | exit: 1
+transcript saved: WT-codex2.transcript.txt ( 0 bytes )
+transcript result: (empty)
+
+### DEMO 11b — Codex worker FOR REAL with complete corrected invocation (AT-08)
+(fix = prompt on stdin + --sandbox + --skip-git-repo-check; precise v1.1 adapter change)
+worker: codex_cli | exit: 0
+transcript saved: WT-codex3.transcript.txt ( 25 bytes )
+transcript result: TALISMAN-CODEX-WORKER-OK
+AT-08 LIVE PASS
+
+### DEMO 12 — egress allowlist enforced by a real proxy, FOR REAL (AT-14)
+(a CONNECT proxy that calls TalisMan's security/egress.is_allowed before tunneling)
+egress proxy listening on 127.0.0.1:8899, enforcing security/egress allowlist
+
+curl https://api.anthropic.com/  through the proxy   [on allowlist]
+  proxy: ALLOWED api.anthropic.com  (on allowlist) -> tunneling
+  -> reached api.anthropic.com: HTTP 404
+
+curl https://evil-exfiltration.example.com/  through the proxy   [NOT on allowlist]
+  proxy: BLOCKED evil-exfiltration.example.com  (not on TalisMan egress allowlist)
+  -> request did NOT go through: ProxyError
+
+AT-14: a disallowed domain is blocked by the proxy policy before any connection.
