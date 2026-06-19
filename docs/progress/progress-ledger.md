@@ -6,16 +6,17 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 14 — Bootstrap self-improvement project (scope ADR in review)
-- **Current artifact:** ADR-0005 — Phase 14 = "assemble + simulated run" (Pat chose this 2026-06-18).
-  Decomposed into S14.01 (composition root + entrypoint), S14.02 (governed v1.1-planning spiral run),
-  S14.03 (minimal lessons retrieval, conditional). PR open for Pat's approval.
-- **Last completed slice:** S13.01 systemd units (merged, PR #24) — Phase 13 complete.
-- **Honest status note:** Phases 0–13 = verified PARTS, not yet an assembled running service (no
-  composition root / `main` entrypoint; lessons-retrieval + live Telegram bot were scoped out of the
-  testable slices). Phase 14 is the integration capstone (per ADR-0005).
-- **Current blocker:** awaiting human review + merge of the ADR-0005 PR.
-- **Next human decision needed:** merge the ADR-0005 PR, then S14.01 (composition root + entrypoint).
+- **Current phase:** Phase 14 — Bootstrap self-improvement project (per ADR-0005, merged PR #25)
+- **Current slice:** S14.01 Composition root + entrypoint — review_ready (PR open; Codex review: pass).
+  TalisMan now assembles into a runnable whole (`app/composition` + `talisman_core/main`) and runs a
+  deterministic spiral end-to-end.
+- **Last completed slice:** ADR-0005 (Phase 14 scope, merged PR #25); S13.01 systemd units (merged, PR #24).
+- **Honest status note:** as of S14.01 the orchestrator ASSEMBLES + runs deterministically; still
+  scoped out of the deterministic run (per ADR-0005): worker-driven phase handlers (S14.02), live
+  Telegram, lessons-retrieval (S14.03 if needed). Full live run deferred to post-v1 operation.
+- **Current blocker:** awaiting human review + merge of the S14.01 PR.
+- **Next human decision needed:** merge the S14.01 PR, then S14.02 (the governed v1.1-planning spiral
+  run — worker-driven handlers + gates fire + v1.1 backlog artifact).
 
 ## Build harness status (2026-06-17)
 
@@ -76,6 +77,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-18 | S11.02 | 11 | Codex CLI | Claude Code | accepted | all five pass; 73 tests; per-project wait metrics + 24h aging (once per window, injected clock); S11.01 preserved | `docs/reviews/S11.02.yaml` (approve) | 2 info notes (aging-boundary asymmetry is self-consistent; per-project last_wait_reason last-writer-wins) | merged (PR #22) |
 | 2026-06-18 | S12.01 | 12 | Claude Code | Codex CLI | accepted | all five pass; 80 tests; health aggregation (worst-wins) + to_dict /status payload; structured JSON logging (injected sink+clock). NOTE: impl first committed to local main by mistake; moved to slice branch, main reset, re-reviewed | `docs/reviews/S12.01.yaml` (pass) | none | merged (PR #23) |
 | 2026-06-18 | S13.01 | 13 | Codex CLI | Claude Code | accepted | all five pass; 85 tests; pure systemd unit renderer (gateway+orchestrator) — Restart=on-failure, orchestrator orders After+Wants gateway, no secret literals; deploy/systemd files byte-match canonical templates | `docs/reviews/S13.01.yaml` (pass) | AT-18 runtime restart exercised at operator/Phase-15 gate, not CI | merged (PR #24) |
+| 2026-06-19 | S14.01 | 14 | Claude Code | Codex CLI | review_ready | all five pass; 92 tests; composition root wires graph+checkpointer+scheduler+logging into a runnable TalismanApp; `talisman_core.main` entrypoint (dry-run + demo spiral); concrete wiring isolated to app (boundary held) | `docs/reviews/S14.01.yaml` (pass) | none | human review + merge of PR |
 
 ## Decision log
 

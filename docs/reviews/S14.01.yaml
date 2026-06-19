@@ -1,0 +1,24 @@
+slice_id: S14.01
+lead_agent: claude_code
+review_agent: codex_cli
+status: pass
+summary: "S14.01 meets the composition-root and entrypoint acceptance criteria without correctness, security, architecture-boundary, or scope-creep findings."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  status: pass
+  notes: "Concrete wiring is isolated to talisman_core.app.composition, and talisman_core.main imports only the composition root. No domain, workflow, or policy imports of adapters/workers are introduced."
+security:
+  status: pass
+  notes: "No secrets, external calls, live adapters, or irreversible actions are introduced."
+acceptance_criteria:
+  status: pass
+  notes: "The slice adds a deterministic runnable app assembly, dry-run entrypoint, demo spiral path, and focused tests for assembly, determinism, sequencing, and CLI behavior."
+scope_creep:
+  status: pass
+  notes: "Changes are limited to the composition root, service entrypoint, and tests for those surfaces."
+findings: []
