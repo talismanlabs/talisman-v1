@@ -6,13 +6,16 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 13 — systemd service (single slice, in review)
-- **Current slice:** S13.01 systemd units — review_ready (PR open; Claude review: pass)
-- **Last completed slice:** S12.01 Health check + structured logs (merged, PR #23) — Phase 12 complete
-- **Current blocker:** awaiting human review + merge of the S13.01 PR.
-- **Next human decision needed:** merge the S13.01 PR. That completes Phase 13; next is Phase 14
-  (Bootstrap self-improvement project) — TalisMan plans its own v1.1 through the gated spiral. I expect
-  to bring a plain-English brief on the bootstrap-project scope (a flagged under-specified area).
+- **Current phase:** Phase 14 — Bootstrap self-improvement project (scope ADR in review)
+- **Current artifact:** ADR-0005 — Phase 14 = "assemble + simulated run" (Pat chose this 2026-06-18).
+  Decomposed into S14.01 (composition root + entrypoint), S14.02 (governed v1.1-planning spiral run),
+  S14.03 (minimal lessons retrieval, conditional). PR open for Pat's approval.
+- **Last completed slice:** S13.01 systemd units (merged, PR #24) — Phase 13 complete.
+- **Honest status note:** Phases 0–13 = verified PARTS, not yet an assembled running service (no
+  composition root / `main` entrypoint; lessons-retrieval + live Telegram bot were scoped out of the
+  testable slices). Phase 14 is the integration capstone (per ADR-0005).
+- **Current blocker:** awaiting human review + merge of the ADR-0005 PR.
+- **Next human decision needed:** merge the ADR-0005 PR, then S14.01 (composition root + entrypoint).
 
 ## Build harness status (2026-06-17)
 
@@ -40,8 +43,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 10 | Security profile | accepted | 2026-06-17 | 2026-06-17 |  |
 | 11 | Scheduler and portfolio | accepted | 2026-06-17 | 2026-06-18 |  |
 | 12 | Observability | accepted | 2026-06-18 | 2026-06-18 |  |
-| 13 | systemd service | in_progress | 2026-06-18 |  |  |
-| 14 | Bootstrap self-improvement project | not_started |  |  |  |
+| 13 | systemd service | accepted | 2026-06-18 | 2026-06-18 |  |
+| 14 | Bootstrap self-improvement project | in_progress | 2026-06-18 |  |  |
 | 15 | v1 release candidate | not_started |  |  |  |
 
 ## Slice ledger
@@ -72,7 +75,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | S11.01 | 11 | Claude Code | Codex CLI | accepted | all five pass; 68 tests; active-slot cap + priority/FIFO. Codex BLOCKED a real cap-bypass (duplicate task_id); fixed (uniqueness + regression tests); re-review approve | `docs/reviews/S11.01.yaml` (approve after fix) | none | merged (PR #21) |
 | 2026-06-18 | S11.02 | 11 | Codex CLI | Claude Code | accepted | all five pass; 73 tests; per-project wait metrics + 24h aging (once per window, injected clock); S11.01 preserved | `docs/reviews/S11.02.yaml` (approve) | 2 info notes (aging-boundary asymmetry is self-consistent; per-project last_wait_reason last-writer-wins) | merged (PR #22) |
 | 2026-06-18 | S12.01 | 12 | Claude Code | Codex CLI | accepted | all five pass; 80 tests; health aggregation (worst-wins) + to_dict /status payload; structured JSON logging (injected sink+clock). NOTE: impl first committed to local main by mistake; moved to slice branch, main reset, re-reviewed | `docs/reviews/S12.01.yaml` (pass) | none | merged (PR #23) |
-| 2026-06-18 | S13.01 | 13 | Codex CLI | Claude Code | review_ready | all five pass; 85 tests; pure systemd unit renderer (gateway+orchestrator) — Restart=on-failure, orchestrator orders After+Wants gateway, no secret literals; deploy/systemd files byte-match canonical templates | `docs/reviews/S13.01.yaml` (pass) | AT-18 runtime restart exercised at operator/Phase-15 gate, not CI | human review + merge of PR |
+| 2026-06-18 | S13.01 | 13 | Codex CLI | Claude Code | accepted | all five pass; 85 tests; pure systemd unit renderer (gateway+orchestrator) — Restart=on-failure, orchestrator orders After+Wants gateway, no secret literals; deploy/systemd files byte-match canonical templates | `docs/reviews/S13.01.yaml` (pass) | AT-18 runtime restart exercised at operator/Phase-15 gate, not CI | merged (PR #24) |
 
 ## Decision log
 
@@ -87,6 +90,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | Approved ADR-0002 (Phase 3 LangGraph design); added `langgraph` as the first runtime dependency. | Resolves the Phase 3 spec gap (graph shape, gates→interrupt/resume, checkpointer injection, LangGraph/policy seam) before implementation; user merged the ADR PR. | `docs/adr/0002-langgraph-workflow-design.md`; PR #4 |
 | 2026-06-17 | Approved ADR-0003 (approval idempotency design). | Resolves the Phase 5 / S05.02 spec gap (idempotency-key scheme, INSERT-once dedup via gate_events UNIQUE, reordering guard, 72h TTL) before implementation; user merged the ADR PR. | `docs/adr/0003-approval-idempotency.md`; PR #10 |
 | 2026-06-17 | Approved ADR-0004 (cost gateway — direct, port-first). | Resolves the Phase 9 spec gap: gateway forwards directly to providers (no LiteLLM) behind the typed GatewayPort, LiteLLM swappable later. User chose this in a plain-English design review; added httpx in S09.01. | `docs/adr/0004-cost-gateway-direct.md`; PR #16 |
+| 2026-06-18 | ADR-0005 (Phase 14 = assemble + simulated run). | Resolves the flagged Phase 14 under-specification: build the composition root + entrypoint and run one deterministic governed v1.1-planning spiral (stub workers, in-process approval, stub gateway) — no live spend, CI-testable. Decomposed into S14.01/02/03; full live run deferred to post-v1 operation. User chose this in a plain-English design review. | `docs/adr/0005-bootstrap-project-scope.md` |
 
 ## Risk register
 
