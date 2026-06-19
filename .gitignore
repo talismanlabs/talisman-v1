@@ -15,7 +15,8 @@ venv/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
-uv.lock
+# NOTE: uv.lock is intentionally COMMITTED (pinned, reproducible installs; CI uses
+# `uv sync --locked`). Do not add it back here.
 
 # Secrets — NEVER commit. The system reads secrets from files at runtime; those
 # files live outside the repo (e.g. ~/talisman/secrets/) and must never be staged.
