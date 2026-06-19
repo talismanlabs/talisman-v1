@@ -6,17 +6,16 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 ## Current status summary
 
 - **Overall status:** in_progress
-- **Current phase:** Phase 14 — Bootstrap self-improvement project (per ADR-0005, merged PR #25)
-- **Current slice:** S14.01 Composition root + entrypoint — review_ready (PR open; Codex review: pass).
-  TalisMan now assembles into a runnable whole (`app/composition` + `talisman_core/main`) and runs a
-  deterministic spiral end-to-end.
-- **Last completed slice:** ADR-0005 (Phase 14 scope, merged PR #25); S13.01 systemd units (merged, PR #24).
-- **Honest status note:** as of S14.01 the orchestrator ASSEMBLES + runs deterministically; still
-  scoped out of the deterministic run (per ADR-0005): worker-driven phase handlers (S14.02), live
-  Telegram, lessons-retrieval (S14.03 if needed). Full live run deferred to post-v1 operation.
-- **Current blocker:** awaiting human review + merge of the S14.01 PR.
-- **Next human decision needed:** merge the S14.01 PR, then S14.02 (the governed v1.1-planning spiral
-  run — worker-driven handlers + gates fire + v1.1 backlog artifact).
+- **Current phase:** Phase 14 — Bootstrap self-improvement project (capstone complete in review)
+- **Current slice:** S14.02 Governed self-improvement spiral run — review_ready (PR open; Codex review:
+  approved). TalisMan ran its first project (planning its own v1.1) through its gated spiral: both gates
+  fired via ApprovalPort interrupt/resume; produced `docs/talisman-v1.1-backlog.md`. Phase 14 acceptance met.
+- **Last completed slice:** S14.01 Composition root + entrypoint (merged, PR #26).
+- **S14.03 (lessons retrieval):** NOT NEEDED — S14.02 completed the governed spiral without it; deferred
+  to v1.1 (tracked in the risk register / v1.1 backlog).
+- **Current blocker:** awaiting human review + merge of the S14.02 PR.
+- **Next human decision needed:** merge the S14.02 PR. That completes Phase 14; only Phase 15 remains
+  (v1 release candidate — execute the acceptance test plan).
 
 ## Build harness status (2026-06-17)
 
@@ -77,7 +76,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-18 | S11.02 | 11 | Codex CLI | Claude Code | accepted | all five pass; 73 tests; per-project wait metrics + 24h aging (once per window, injected clock); S11.01 preserved | `docs/reviews/S11.02.yaml` (approve) | 2 info notes (aging-boundary asymmetry is self-consistent; per-project last_wait_reason last-writer-wins) | merged (PR #22) |
 | 2026-06-18 | S12.01 | 12 | Claude Code | Codex CLI | accepted | all five pass; 80 tests; health aggregation (worst-wins) + to_dict /status payload; structured JSON logging (injected sink+clock). NOTE: impl first committed to local main by mistake; moved to slice branch, main reset, re-reviewed | `docs/reviews/S12.01.yaml` (pass) | none | merged (PR #23) |
 | 2026-06-18 | S13.01 | 13 | Codex CLI | Claude Code | accepted | all five pass; 85 tests; pure systemd unit renderer (gateway+orchestrator) — Restart=on-failure, orchestrator orders After+Wants gateway, no secret literals; deploy/systemd files byte-match canonical templates | `docs/reviews/S13.01.yaml` (pass) | AT-18 runtime restart exercised at operator/Phase-15 gate, not CI | merged (PR #24) |
-| 2026-06-19 | S14.01 | 14 | Claude Code | Codex CLI | review_ready | all five pass; 92 tests; composition root wires graph+checkpointer+scheduler+logging into a runnable TalismanApp; `talisman_core.main` entrypoint (dry-run + demo spiral); concrete wiring isolated to app (boundary held) | `docs/reviews/S14.01.yaml` (pass) | none | human review + merge of PR |
+| 2026-06-19 | S14.01 | 14 | Claude Code | Codex CLI | accepted | all five pass; 92 tests; composition root wires graph+checkpointer+scheduler+logging into a runnable TalismanApp; `talisman_core.main` entrypoint (dry-run + demo spiral); concrete wiring isolated to app (boundary held) | `docs/reviews/S14.01.yaml` (pass) | none | merged (PR #26) |
+| 2026-06-19 | S14.02 | 14 | Claude Code | Codex CLI | review_ready | all five pass; 96 tests; governed v1.1-planning spiral — both gates fire via ApprovalPort interrupt/resume, plan routes through WorkerPort seam, produces docs/talisman-v1.1-backlog.md. Phase 14 acceptance met | `docs/reviews/S14.02.yaml` (approved) | S14.03 lessons-retrieval not needed (deferred to v1.1) | human review + merge of PR |
 
 ## Decision log
 

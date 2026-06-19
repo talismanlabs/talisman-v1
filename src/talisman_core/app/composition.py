@@ -16,8 +16,10 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import Command
 
 from talisman_core.observability.logs import StructuredLogger
+from talisman_core.ports.approval import ApprovalPort, ApprovalRequest
 from talisman_core.scheduler.portfolio import PortfolioScheduler
 from talisman_core.workflow.spiral import (
     SPIRAL_PHASES,
@@ -85,6 +87,53 @@ class TalismanApp:
         final = cast(SpiralState, self.graph.invoke(initial, config=config))
         self.logger.log(
             "project_finished",
+            project_id=project_id,
+            completed=final["completed_phases"],
+            artifacts=final["artifacts"],
+        )
+        return final
+
+    def run_gated_project(
+        self,
+        project_id: str,
+        phase_sequence: list[str],
+        approver: ApprovalPort,
+        tier: str = "standard",
+    ) -> SpiralState:
+        """Run a gated project spiral, resolving each gate through the approval port.
+
+        The spiral runs until it interrupts at a gate; the interrupt payload is turned
+        into an ``ApprovalRequest``, the approver decides, and the graph resumes with
+        that decision. The loop repeats until the spiral completes (or a reject ends it).
+        """
+
+        initial: SpiralState = {
+            "project_id": project_id,
+            "tier": tier,
+            "phase_sequence": phase_sequence,
+            "current_phase": "",
+            "completed_phases": [],
+            "pending_gate_id": None,
+            "last_decision": None,
+            "artifacts": [],
+            "escalations_today": 0,
+        }
+        config = {"configurable": {"thread_id": project_id}}
+        self.logger.log("gated_project_started", project_id=project_id, phases=phase_sequence)
+        result = self.graph.invoke(initial, config=config)
+        while "__interrupt__" in result:
+            payload = result["__interrupt__"][0].value
+            request = ApprovalRequest(
+                project_id=payload["project_id"],
+                gate_id=payload["gate_id"],
+                message=payload["summary"],
+                idempotency_key=payload["gate_id"],
+            )
+            decision = approver.request_approval(request)
+            result = self.graph.invoke(Command(resume=decision.value), config=config)
+        final = cast(SpiralState, result)
+        self.logger.log(
+            "gated_project_finished",
             project_id=project_id,
             completed=final["completed_phases"],
             artifacts=final["artifacts"],
