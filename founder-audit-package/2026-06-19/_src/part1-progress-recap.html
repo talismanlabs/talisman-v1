@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body{font-family:'Liberation Sans',Arial,sans-serif;color:#1a1a2e;margin:40px;line-height:1.45;}
+h1{color:#0f3460;font-size:26pt;margin-bottom:0;}
+h2{color:#0f3460;border-bottom:2px solid #e94560;padding-bottom:4px;margin-top:28px;font-size:16pt;}
+h3{color:#16213e;font-size:12pt;margin-bottom:4px;}
+.sub{color:#555;font-size:11pt;margin-top:2px;}
+table{border-collapse:collapse;width:100%;font-size:9.5pt;margin-top:8px;}
+th,td{border:1px solid #ccc;padding:5px 7px;text-align:left;vertical-align:top;}
+th{background:#0f3460;color:#fff;white-space:nowrap;}
+.ok{color:#0a7d34;font-weight:bold;white-space:nowrap;}.waive{color:#b36b00;font-weight:bold;white-space:nowrap;}
+.stat{display:inline-block;background:#f0f3f9;border:1px solid #d3dcec;border-radius:6px;padding:8px 12px;margin:4px 6px 4px 0;font-size:10pt;}
+.stat b{color:#0f3460;font-size:14pt;display:block;}
+.callout{background:#fdf0f2;border-left:4px solid #e94560;padding:10px 14px;margin:12px 0;font-size:10pt;}
+.pb{page-break-before:always;}
+small{color:#666;}
+</style></head><body>
+
+<h1>TalisMan v1 — Founder Audit Package</h1>
+<p class="sub">Part 1 of 3 · Progress recap · 2026-06-19 · Baseline (first audit package)</p>
+
+<h2>What TalisMan is</h2>
+<p>A local-first, <b>approval-gated AI orchestration system</b>: it coordinates Claude Code and Codex CLI
+as worker agents to carry projects through a governed "spiral" (discovery → plan → review → …), pausing
+at human-approval gates and enforcing cost and security boundaries. The design principle throughout is
+<b>gated autonomy</b> — it works unattended until a decision, a budget event, or an incident needs a human.</p>
+
+<h2>How it was built — the meta-story</h2>
+<p>TalisMan was built <b>by its own governed method</b> (we dogfooded). Every change shipped as one slice =
+one branch = one PR, and had to pass <b>three independent gates</b> before merging:</p>
+<table>
+<colgroup><col style="width:24%"><col style="width:48%"><col style="width:28%"></colgroup>
+<tr><th>Gate</th><th>What it is</th><th>Why it matters</th></tr>
+<tr><td>1 · Checks (CI)</td><td>ruff, ruff-format, mypy --strict, pytest, import-linter — in CI on every PR</td><td>Machine-objective; never skipped</td></tr>
+<tr><td>2 · Cross-family</td><td>The <i>opposite</i> AI family reviews every slice (Claude leads → Codex reviews, and vice-versa); saved as a YAML artifact</td><td>Independent eyes catch what tests can't</td></tr>
+<tr><td>3 · Human gate</td><td>You merge the PR (branch protection on <code>main</code>)</td><td>Final say stays human</td></tr>
+</table>
+
+<h2>By the numbers</h2>
+<p>
+<span class="stat"><b>16</b> phases (0–15)</span>
+<span class="stat"><b>28</b> pull requests</span>
+<span class="stat"><b>100+</b> tests passing</span>
+<span class="stat"><b>25</b> cross-family reviews</span>
+<span class="stat"><b>5</b> architecture contracts · <b>0</b> violations</span>
+<span class="stat"><b>5</b> ADRs (design decisions)</span>
+</p>
+
+<h2 class="pb">The roadmap that got us here — 16 phases to v1</h2>
+<table>
+<tr><th>#</th><th>Phase</th><th>What it delivered</th></tr>
+<tr><td>0–1</td><td>Constitution + dev env</td><td>Repo, package skeleton, boundary contracts, CI, toolchain</td></tr>
+<tr><td>2</td><td>Domain & ports</td><td>Pure domain objects + typed interfaces (the seams)</td></tr>
+<tr><td>3</td><td>Workflow engine</td><td>LangGraph gated spiral — pause/resume at approval gates</td></tr>
+<tr><td>4</td><td>Persistence</td><td>SQLite state + event log + migrations</td></tr>
+<tr><td>5</td><td>Approval interface</td><td>Telegram allowlist + approval idempotency</td></tr>
+<tr><td>6–7</td><td>Worker adapters</td><td>Claude Code + Codex CLI wrapped behind one typed port</td></tr>
+<tr><td>8</td><td>Review protocol</td><td>Structured cross-family review + fail-closed enforcement</td></tr>
+<tr><td>9</td><td>Cost gateway</td><td>Budget circuit breakers + provider-key isolation</td></tr>
+<tr><td>10</td><td>Security profile</td><td>Credential scrub + default-deny egress allowlist</td></tr>
+<tr><td>11</td><td>Scheduler</td><td>Active-slot cap + priority/FIFO + 24h aging</td></tr>
+<tr><td>12</td><td>Observability</td><td>Health aggregation + structured JSON logs</td></tr>
+<tr><td>13</td><td>systemd service</td><td>Auto-restart units (gateway-first ordering)</td></tr>
+<tr><td>14</td><td>Bootstrap project</td><td><b>TalisMan planned its own v1.1 through its own gates</b></td></tr>
+<tr><td>15</td><td>Release candidate</td><td>Honest acceptance accounting against AT-01…AT-20</td></tr>
+</table>
+
+<h2>The standout moment — the governance caught real bugs</h2>
+<div class="callout">
+Cross-family review wasn't ceremony. In <b>S11.01</b> Codex blocked a genuine cap-bypass bug that had
+passed every automated check. And in <b>S15.01</b> — the release decision itself — Codex blocked the lead
+(Claude) for <b>over-grading its own work</b>, forcing an honest re-grade. A system that catches its own
+optimism is the whole point.
+</div>
+
+<h2 class="pb">Honest acceptance picture (AT-01…AT-20)</h2>
+<p><b>5 criteria PASS end-to-end</b> (CI + on-disk artifacts) · <b>10 component-verified</b> (built and
+unit-tested; seven were also shown live in today's walkthrough as <i>prototype/operator evidence</i> —
+not reviewed release proof — and harden into PASS as the v1.1-P1 code lands under governance) ·
+<b>5 waived</b> to v1.1, each documented and founder-approved on 2026-06-19.</p>
+<table>
+<tr><th>Status</th><th>Acceptance tests</th></tr>
+<tr><td class="ok">PASS (end-to-end: merged + CI/artifacts)</td><td>AT-01,02,03 (CI) · AT-09 (review) · AT-20 (spiral)</td></tr>
+<tr><td>Component-verified</td><td>AT-06,10,11 (unit-tested) · <b>AT-05,07,08,13,14,15,18</b> (also shown live today as prototype evidence; flip to PASS as v1.1-P1 lands)</td></tr>
+<tr><td class="waive">Waived to v1.1 (approved 2026-06-19)</td><td>AT-04 durable checkpointer · AT-12 retry/jitter · AT-16 retrospective · AT-17 lessons retrieval · AT-19 incident dump</td></tr>
+</table>
+
+<h2>What changed since the last walkthrough</h2>
+<p><b>This is the baseline.</b> It captures the full arc: from an empty repository to a coherent, assembled,
+self-improving orchestrator that has now had every operator capability exercised live in a prototype
+walkthrough. Future audit packages will diff against this one to show how TalisMan matured.</p>
+
+<p style="margin-top:24px;"><small>Part 2 (live command walkthrough) and Part 3 (roadmap ahead) accompany this document.
+Source records and the full transcript are in the dated package folder.</small></p>
+
+</body></html>

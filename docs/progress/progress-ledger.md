@@ -5,19 +5,22 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 
 ## Current status summary
 
-- **Overall status:** v1 BUILD STRUCTURALLY COMPLETE (all 16 phases have slices) — RELEASE CANDIDATE,
-  not yet accepted.
-- **Current phase:** Phase 15 — v1 release candidate (honest acceptance accounting in review).
-- **Current slice:** S15.01 Acceptance run — review_ready (Claude lead / Codex review; lead-reviewer
-  SWAPPED from backlog so the synthesis had full build context). Codex's skeptical review BLOCKED an
-  over-claimed grading; the lead CORRECTED it to an honest **5 pass / 8 component-verified / 7 waived**
-  (only AT-01/02/03/09/20 are PASS). `app/release` + `docs/release/v1-acceptance-checklist.md`.
-- **Last completed slice:** S14.02 Governed self-improvement spiral run (merged, PR #27) — Phase 14 complete.
-- **Release status:** NOT accepted. Acceptance needs (a) the operator walkthrough to verify the 8
-  component-verified items end-to-end, and (b) Pat's explicit approval of the 7 waivers. The 8
-  component-verified + 7 waived items are the honest gap between "parts built" and "v1 accepted."
-- **Current blocker:** awaiting human review + merge of the S15.01 PR, then the operator walkthrough.
-- **Next human decision needed:** merge the S15.01 PR; then the live operator walkthrough + waiver sign-off.
+- **Overall status:** TalisMan v1 is **ACCEPTED** (2026-06-19). All 16 phases complete; the live
+  operator walkthrough demonstrated the runtime behaviours and the founder approved the five waivers.
+- **Current phase:** Phase 15 — v1 release **accepted**.
+- **Current slice:** S15.02 Formal v1 acceptance — review_ready (Claude lead / Codex review). Records
+  the founder's waiver approval, reconciles `app/release` to the post-walkthrough truth WITHOUT
+  inflating grades (AT-05 Telegram + AT-14 egress moved out of *waived* → component-verified-with-live-
+  evidence; the seven live-demonstrated items keep COMPONENT_VERIFIED until their v1.1-P1 code merges),
+  and commits the operator-walkthrough transcript + founder audit package as the evidence trail.
+- **Last completed slice:** S15.01 Acceptance run (merged, PR #28) — honest release candidate.
+- **Acceptance picture:** 5 PASS end-to-end (AT-01/02/03/09/20) · 10 component-verified (7 demonstrated
+  live: AT-05/07/08/13/14/15/18; 3 unit-only: AT-06/10/11) · 5 waived & approved (AT-04/12/16/17/19).
+- **Next work:** the first **v1.1** project — P1 consolidation (land the live-built Telegram bot,
+  `--serve`, egress proxy, the Codex-invocation fix, and the credential-scrub wiring as governed
+  slices), then the five approved-waiver features starting with the durable checkpointer (AT-04).
+- **Current blocker:** awaiting human review + merge of the S15.02 PR.
+- **Next human decision needed:** merge the S15.02 PR; then the first v1.1-P1 slice begins.
 
 ## Build harness status (2026-06-17)
 
@@ -47,7 +50,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 12 | Observability | accepted | 2026-06-18 | 2026-06-18 |  |
 | 13 | systemd service | accepted | 2026-06-18 | 2026-06-18 |  |
 | 14 | Bootstrap self-improvement project | accepted | 2026-06-18 | 2026-06-19 |  |
-| 15 | v1 release candidate | in_progress (release candidate) | 2026-06-19 |  |  |
+| 15 | v1 release acceptance | accepted | 2026-06-19 | 2026-06-19 | 2026-06-19 (waivers approved) |
 
 ## Slice ledger
 
@@ -80,7 +83,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-18 | S13.01 | 13 | Codex CLI | Claude Code | accepted | all five pass; 85 tests; pure systemd unit renderer (gateway+orchestrator) — Restart=on-failure, orchestrator orders After+Wants gateway, no secret literals; deploy/systemd files byte-match canonical templates | `docs/reviews/S13.01.yaml` (pass) | AT-18 runtime restart exercised at operator/Phase-15 gate, not CI | merged (PR #24) |
 | 2026-06-19 | S14.01 | 14 | Claude Code | Codex CLI | accepted | all five pass; 92 tests; composition root wires graph+checkpointer+scheduler+logging into a runnable TalismanApp; `talisman_core.main` entrypoint (dry-run + demo spiral); concrete wiring isolated to app (boundary held) | `docs/reviews/S14.01.yaml` (pass) | none | merged (PR #26) |
 | 2026-06-19 | S14.02 | 14 | Claude Code | Codex CLI | accepted | all five pass; 96 tests; governed v1.1-planning spiral — both gates fire via ApprovalPort interrupt/resume, plan routes through WorkerPort seam, produces docs/talisman-v1.1-backlog.md. Phase 14 acceptance met | `docs/reviews/S14.02.yaml` (approved) | S14.03 lessons-retrieval not needed (deferred to v1.1) | merged (PR #27) |
-| 2026-06-19 | S15.01 | 15 | Claude Code | Codex CLI | review_ready | all five pass; 101 tests; HONEST v1 acceptance accounting (app/release + checklist). Lead/reviewer SWAPPED (Claude lead) for build context; Codex skeptical review BLOCKED over-claimed PASSes → corrected to 5 pass / 8 component-verified / 7 waived | `docs/reviews/S15.01.yaml` (blocked→corrected; release candidate) | release NOT accepted — needs operator walkthrough + Pat waiver approvals | human review + merge; then walkthrough |
+| 2026-06-19 | S15.01 | 15 | Claude Code | Codex CLI | accepted | all five pass; 101 tests; HONEST v1 acceptance accounting (app/release + checklist). Lead/reviewer SWAPPED (Claude lead) for build context; Codex skeptical review BLOCKED over-claimed PASSes → corrected to 5 pass / 8 component-verified / 7 waived | `docs/reviews/S15.01.yaml` (blocked→corrected; release candidate) | resolved by S15.02 walkthrough + acceptance | merged (PR #28) |
+| 2026-06-19 | S15.02 | 15 | Claude Code | Codex CLI | review_ready | all five pass; 103 tests; FORMAL v1 acceptance. Records founder waiver approval; reconciles app/release to the post-walkthrough truth without inflating grades (AT-05/AT-14 waived→component-verified as prototype evidence; 5 PASS unchanged); commits operator-walkthrough transcript + founder audit package as evidence | `docs/reviews/S15.02.yaml` (**pass/accept** after 2 revise rounds — Codex caught PII in the public-repo transcript + grade inconsistencies; both fixed pre-push) | live-built v1.1 code (bot.py, --serve, egress proxy) uncommitted until P1 lands it | human review + merge; then v1.1-P1 |
 
 ## Decision log
 
@@ -96,6 +100,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-17 | Approved ADR-0003 (approval idempotency design). | Resolves the Phase 5 / S05.02 spec gap (idempotency-key scheme, INSERT-once dedup via gate_events UNIQUE, reordering guard, 72h TTL) before implementation; user merged the ADR PR. | `docs/adr/0003-approval-idempotency.md`; PR #10 |
 | 2026-06-17 | Approved ADR-0004 (cost gateway — direct, port-first). | Resolves the Phase 9 spec gap: gateway forwards directly to providers (no LiteLLM) behind the typed GatewayPort, LiteLLM swappable later. User chose this in a plain-English design review; added httpx in S09.01. | `docs/adr/0004-cost-gateway-direct.md`; PR #16 |
 | 2026-06-18 | ADR-0005 (Phase 14 = assemble + simulated run). | Resolves the flagged Phase 14 under-specification: build the composition root + entrypoint and run one deterministic governed v1.1-planning spiral (stub workers, in-process approval, stub gateway) — no live spend, CI-testable. Decomposed into S14.01/02/03; full live run deferred to post-v1 operation. User chose this in a plain-English design review. | `docs/adr/0005-bootstrap-project-scope.md` |
+| 2026-06-19 | **TalisMan v1 ACCEPTED.** Founder approved the five waivers (AT-04/12/16/17/19) after a full live operator walkthrough verifying the runtime behaviours; the five waived items become the first v1.1 feature project; the P1 sequence is confirmed. | The walkthrough demonstrated every operator capability live (Telegram control plane, both workers, credential scrub, egress proxy, SQLite restart, systemd kill→restart, governed spiral); grades reconciled honestly (no inflation). | `docs/release/v1-acceptance-checklist.md`; `founder-audit-package/2026-06-19/`; S15.02 |
 
 ## Risk register
 
@@ -117,3 +122,4 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Egress allowlist (S10.02) is host-granular; squid.conf is domain-granular | low | low | Python layer is the more restrictive (fail-safe); reconcile the two enforcement layers intentionally when wiring the egress proxy (S10.02 review info) | agents | open |
 | Scoped-credential issuance mechanism for workers not built (S10.01) | low | medium | v1 workers self-authenticate; design + build host-side scoped/short-lived credential issuance in v1.1 if/when the orchestrator brain or workers need proxied provider access | Pat / agents | open |
 | systemd kill-and-restart (AT-18) verified only at unit-file level, not in CI | low | low | pytest cannot run `systemd --user`; exercise the real kill-and-restart during operator install and the Phase 15 acceptance run (AT-18) (S13.01 review open-risk) | Pat / agents | open |
+| Live-built v1.1 runtime (Telegram `bot.py`, `--serve`, egress proxy) is gate-clean but uncommitted | medium | medium | Built live during the 2026-06-19 walkthrough outside the slice loop; `main.py --serve` is stashed and `bot.py` is untracked. Land each as a governed v1.1-P1 slice (branch+PR+cross-family review) before building on it; do not let it rot in the working tree | agents | open |

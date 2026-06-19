@@ -1,4 +1,4 @@
-"""Tests for the v1 acceptance results (slice S15.01)."""
+"""Tests for the v1 acceptance results (slice S15.01 → S15.02 formal acceptance)."""
 
 from talisman_core.app.release import (
     ACCEPTANCE_RESULTS,
@@ -37,9 +37,30 @@ def test_status_counts_cover_all_twenty() -> None:
 
 
 def test_only_end_to_end_proven_criteria_are_pass() -> None:
-    """Only fully-proven ATs are PASS — locks the honest grading after the Codex S15.01 review."""
+    """Only fully-proven ATs are PASS — locks the honest grading after the Codex S15.01 review.
+
+    S15.02 records the founder's formal acceptance WITHOUT inflating grades: live-demonstrated
+    items keep COMPONENT_VERIFIED until their runtime code merges under governance (v1.1-P1).
+    """
     passing = {r.test_id for r in ACCEPTANCE_RESULTS if r.status is AcceptanceStatus.PASS}
     assert passing == {"AT-01", "AT-02", "AT-03", "AT-09", "AT-20"}
+
+
+def test_v1_accepted_with_five_approved_waivers() -> None:
+    """S15.02 acceptance: exactly five waivers remain, each carrying the founder's approval."""
+    waived = [r for r in ACCEPTANCE_RESULTS if r.status is AcceptanceStatus.WAIVED]
+    assert {r.test_id for r in waived} == {"AT-04", "AT-12", "AT-16", "AT-17", "AT-19"}
+    for result in waived:
+        assert result.waiver is not None
+        assert "APPROVED" in result.waiver.approval
+
+
+def test_live_demonstrated_items_are_not_waived() -> None:
+    """AT-05 (Telegram) and AT-14 (egress) were demonstrated live, so they are not waived."""
+    for test_id in ("AT-05", "AT-14"):
+        result = next(r for r in ACCEPTANCE_RESULTS if r.test_id == test_id)
+        assert result.status is AcceptanceStatus.COMPONENT_VERIFIED
+        assert result.waiver is None
 
 
 def test_checklist_renders_all_tests_and_a_summary() -> None:
