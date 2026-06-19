@@ -1,0 +1,25 @@
+slice_id: S14.02
+lead_agent: claude_code
+review_agent: codex_cli
+verdict: approved
+findings: []
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  status: pass
+  notes: "App-layer additions use ports and workflow composition without importing adapters or workers into domain, workflow, or policies."
+acceptance_criteria:
+  status: pass
+  notes: "The slice adds a deterministic self-improvement bootstrap run, exercises approval gates through the ApprovalPort, routes planning through the WorkerPort seam, and produces the v1.1 backlog artifact."
+security:
+  status: pass
+  notes: "No secrets, live spend, subprocess execution, network calls, or irreversible actions were introduced."
+scope:
+  status: pass
+  notes: "Changes are limited to the bootstrap backlog artifact, gated app orchestration, and focused tests for S14.02."
+required_changes: []
+open_questions: []
