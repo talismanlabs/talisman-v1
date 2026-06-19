@@ -36,6 +36,12 @@ def test_status_counts_cover_all_twenty() -> None:
     assert counts[AcceptanceStatus.PASS] >= 1
 
 
+def test_only_end_to_end_proven_criteria_are_pass() -> None:
+    """Only fully-proven ATs are PASS — locks the honest grading after the Codex S15.01 review."""
+    passing = {r.test_id for r in ACCEPTANCE_RESULTS if r.status is AcceptanceStatus.PASS}
+    assert passing == {"AT-01", "AT-02", "AT-03", "AT-09", "AT-20"}
+
+
 def test_checklist_renders_all_tests_and_a_summary() -> None:
     """The rendered checklist lists every test id and a summary line."""
     markdown = render_acceptance_checklist()
