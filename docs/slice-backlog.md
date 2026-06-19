@@ -46,9 +46,9 @@
 | S12.01 | 12 | Add health check and logs | Claude Code | Codex CLI | accepted | `/status` and log files expose health. (observability/health worst-wins + to_dict; observability/logs structured JSON; merged PR #23) |
 | S13.01 | 13 | Add systemd units | Codex CLI | Claude Code | accepted | Services install and restart locally. (app/systemd_units renderer; Restart=on-failure; gateway-first ordering; deploy/systemd/*.service; merged PR #24) |
 | S14.01 | 14 | Composition root + entrypoint | Claude Code | Codex CLI | accepted | App assembles + `talisman_core.main` entrypoint runs a deterministic cycle. (per ADR-0005; app/composition + main; merged PR #26) |
-| S14.02 | 14 | Governed self-improvement spiral run | Claude Code | Codex CLI | review_ready | TalisMan completes one deterministic governed v1.1-planning spiral; gates fire; v1.1 backlog artifact produced. (app/bootstrap + run_gated_project; docs/talisman-v1.1-backlog.md) |
+| S14.02 | 14 | Governed self-improvement spiral run | Claude Code | Codex CLI | accepted | TalisMan completes one deterministic governed v1.1-planning spiral; gates fire; v1.1 backlog artifact produced. (app/bootstrap + run_gated_project; merged PR #27) |
 | S14.03 | 14 | Minimal lessons retrieval (conditional) | Codex CLI | Claude Code | not_needed | S14.02 completed the governed spiral without lessons retrieval; deferred to v1.1 (tracked in v1.1 backlog). |
-| S15.01 | 15 | Execute acceptance test plan | Codex CLI | Claude Code | not_started | Release checklist passes or has explicit waivers. |
+| S15.01 | 15 | Execute acceptance test plan | Claude Code | Codex CLI | review_ready | Release checklist passes or has explicit waivers. (app/release; honest 5 pass / 8 component-verified / 7 waived after Codex blocked over-claims; release candidate pending walkthrough + waiver approvals) |
 
 ## Slice rule
 
