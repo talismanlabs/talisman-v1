@@ -16,7 +16,8 @@ class SystemdUnitConfig:
         "--app-dir %h/TalisMan/src --host 127.0.0.1 --port 8787"
     )
     orchestrator_exec_start: str = (
-        "%h/TalisMan/.venv/bin/python -m talisman_core.main --config %h/TalisMan/config/config.yaml"
+        "%h/TalisMan/.venv/bin/python -m talisman_core.main --serve "
+        "--config %h/TalisMan/config/config.yaml"
     )
     gateway_restart_sec: int = 5
     orchestrator_restart_sec: int = 10
