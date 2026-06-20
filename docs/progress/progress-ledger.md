@@ -10,22 +10,21 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.01 Supply-chain & review-gate hardening — review_ready (Claude lead / Codex
-  review). Commits `uv.lock` + `uv sync --locked`, SHA-pins third-party actions + checksum-verifies the
-  gitleaks binary, adds a PII-aware incremental `.gitleaks.toml`, and hardens `scripts/codex_review.sh`
-  (slice-id validation, nonce-fenced untrusted diff, structural artifact check). CI/tooling/governance
-  only — **no application/runtime behavior changes**.
-- **Last completed slice:** S15.02 Formal v1 acceptance (merged, PR #29).
+- **Current slice:** S16.02 Relocate secrets out of the repo working tree — review_ready (Claude lead /
+  Codex review). Moves the live `*.secret` files to the canonical `~/talisman/secrets/` (dir 0700, files
+  0600) and removes the in-repo `secrets/` directory; closes audit finding P2-① (the secrets had lived
+  inside the public-repo checkout, protected only by `.gitignore`). Docs/ops only — no code change.
+- **Last completed slice:** S16.01 Supply-chain & review-gate hardening (merged, PR #30).
 - **Acceptance picture:** 5 PASS end-to-end (AT-01/02/03/09/20) · 10 component-verified (7 demonstrated
   live: AT-05/07/08/13/14/15/18; 3 unit-only: AT-06/10/11) · 5 waived & approved (AT-04/12/16/17/19).
-- **Next work (v1.1 sequence):** (1) this supply-chain hardening slice; (2) relocate `secrets/` out of
-  the repo working tree to `~/talisman/secrets/`; (3) **v1.1-P1 consolidation** — land the live-built
-  Telegram bot, `--serve`, egress proxy, the Codex-invocation fix, and the credential-scrub wiring as
-  governed slices, each closing its matching audit finding (cred-scrub→AT-13, egress proxy→AT-14,
-  live-telegram token redaction→AT-05) and flipping a prototype-evidence AT to a true PASS; then the
-  five approved-waiver features starting with the durable checkpointer (AT-04).
-- **Current blocker:** awaiting human review + merge of the S16.01 PR.
-- **Next human decision needed:** merge the S16.01 PR; then the `secrets/` relocation.
+- **Next work:** **v1.1-P1 consolidation** — land the live-built Telegram bot, `--serve`, egress proxy,
+  the Codex-invocation fix, and the credential-scrub wiring as governed slices, each closing its matching
+  audit finding (cred-scrub→AT-13, egress proxy→AT-14, live-telegram token redaction→AT-05), reading
+  secrets from `~/talisman/secrets/`, and flipping a prototype-evidence AT to a true PASS; then the five
+  approved-waiver features starting with the durable checkpointer (AT-04). (S16.01 supply-chain hardening
+  and S16.02 secrets relocation are done.)
+- **Current blocker:** awaiting human review + merge of the S16.02 PR.
+- **Next human decision needed:** merge the S16.02 PR; then the first v1.1-P1 consolidation slice begins.
 
 ## Build harness status (2026-06-17)
 
@@ -91,7 +90,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-19 | S14.02 | 14 | Claude Code | Codex CLI | accepted | all five pass; 96 tests; governed v1.1-planning spiral — both gates fire via ApprovalPort interrupt/resume, plan routes through WorkerPort seam, produces docs/talisman-v1.1-backlog.md. Phase 14 acceptance met | `docs/reviews/S14.02.yaml` (approved) | S14.03 lessons-retrieval not needed (deferred to v1.1) | merged (PR #27) |
 | 2026-06-19 | S15.01 | 15 | Claude Code | Codex CLI | accepted | all five pass; 101 tests; HONEST v1 acceptance accounting (app/release + checklist). Lead/reviewer SWAPPED (Claude lead) for build context; Codex skeptical review BLOCKED over-claimed PASSes → corrected to 5 pass / 8 component-verified / 7 waived | `docs/reviews/S15.01.yaml` (blocked→corrected; release candidate) | resolved by S15.02 walkthrough + acceptance | merged (PR #28) |
 | 2026-06-19 | S15.02 | 15 | Claude Code | Codex CLI | accepted | all five pass; 103 tests; FORMAL v1 acceptance. Records founder waiver approval; reconciles app/release to the post-walkthrough truth without inflating grades (AT-05/AT-14 waived→component-verified as prototype evidence; 5 PASS unchanged); commits operator-walkthrough transcript + founder audit package as evidence | `docs/reviews/S15.02.yaml` (**pass/accept** after 2 revise rounds — Codex caught PII in the public-repo transcript + grade inconsistencies; both fixed pre-push) | live-built v1.1 code (bot.py, --serve, egress proxy) uncommitted until P1 lands it | merged (PR #29) |
-| 2026-06-19 | S16.01 | 16 | Claude Code | Codex CLI | review_ready | all five pass locally via `uv sync --locked`; gitleaks default full-history scan + PII-config incremental scan both clean locally | `docs/reviews/S16.01.yaml` (pass_with_notes → accept; 2 low notes, no change needed) | supply-chain + review-gate hardening from the 2026-06-19 cross-family audit; PII rules run incrementally to avoid re-flagging redacted history | open PR; human merge |
+| 2026-06-19 | S16.01 | 16 | Claude Code | Codex CLI | accepted | all five pass locally via `uv sync --locked`; gitleaks default full-history scan + PII-config incremental scan both clean locally | `docs/reviews/S16.01.yaml` (pass_with_notes → accept; 2 low notes, no change needed) | supply-chain + review-gate hardening from the 2026-06-19 cross-family audit; PII rules run incrementally to avoid re-flagging redacted history | merged (PR #30) |
+| 2026-06-19 | S16.02 | 16 | Claude Code | Codex CLI | review_ready | deterministic checks green (docs/ops only); 5 secret files moved + verified by name+size; in-repo `secrets/` removed | `docs/reviews/S16.02.yaml` (pass; accept) | closes audit P2-①; canonical config already points at `~/talisman/secrets/` so no consumer breaks; dated audit-package snapshot left intact | request Codex review; open PR; human merge |
 
 ## Decision log
 
@@ -109,6 +109,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-18 | ADR-0005 (Phase 14 = assemble + simulated run). | Resolves the flagged Phase 14 under-specification: build the composition root + entrypoint and run one deterministic governed v1.1-planning spiral (stub workers, in-process approval, stub gateway) — no live spend, CI-testable. Decomposed into S14.01/02/03; full live run deferred to post-v1 operation. User chose this in a plain-English design review. | `docs/adr/0005-bootstrap-project-scope.md` |
 | 2026-06-19 | **TalisMan v1 ACCEPTED.** Founder approved the five waivers (AT-04/12/16/17/19) after a full live operator walkthrough verifying the runtime behaviours; the five waived items become the first v1.1 feature project; the P1 sequence is confirmed. | The walkthrough demonstrated every operator capability live (Telegram control plane, both workers, credential scrub, egress proxy, SQLite restart, systemd kill→restart, governed spiral); grades reconciled honestly (no inflation). | `docs/release/v1-acceptance-checklist.md`; `founder-audit-package/2026-06-19/`; S15.02 |
 | 2026-06-19 | Ran a cross-family security audit (Claude + Codex) over the public repo + full history before v1.1 feature work; opened v1.1 with a supply-chain & review-gate hardening slice (S16.01). | Founder wanted assurance that no vulnerabilities or PII were left needlessly exposed in the public repo. Result: **no credentials in the 92-commit history**; the only committed PII is the self-published commit-identity email (already permanent in commit metadata). The three "high" code findings are unwired controls that become reachable only when v1.1-P1 wires the prototypes, so each fix is bound to its wiring slice. | private audit report (kept out of repo); `docs/slice-backlog.md` S16.01; this ledger |
+| 2026-06-19 | Relocated the live `*.secret` files out of the public-repo working tree to the canonical `~/talisman/secrets/` (dir 0700, files 0600); removed the in-repo `secrets/` directory. | Audit finding P2-①: the secrets sat inside the public checkout, protected only by `.gitignore` — one `git add -f`/typo/zip from exposure. The canonical spec already specifies `~/talisman/secrets/`, so no shipped consumer changes; no rotation (nothing was ever exposed). | S16.02; `docs/talisman-v1/talisman-v1-config-templates.md` |
 
 ## Risk register
 
@@ -133,4 +134,4 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Live-built v1.1 runtime (Telegram `bot.py`, `--serve`, egress proxy) is gate-clean but uncommitted | medium | medium | Built live during the 2026-06-19 walkthrough outside the slice loop; `main.py --serve` is stashed and `bot.py` is untracked. Land each as a governed v1.1-P1 slice (branch+PR+cross-family review) before building on it; do not let it rot in the working tree | agents | open |
 | Flagship security controls (worker credential scrub, egress allowlist, Telegram token redaction) are built but NOT wired into a live path | high (once wired) | high | Not reachable in shipped v1 (only stub workers run; no live bot is instantiated) — the 2026-06-19 cross-family audit verified reachability. Each fix is a **blocking acceptance criterion** on the v1.1-P1 slice that wires its path (cred-scrub→AT-13, egress proxy→AT-14, live-telegram token redaction→AT-05), gated by a contract test before the AT may flip to PASS | agents | open |
 | Supply chain: unpinned CI actions, no committed lockfile, unverified gitleaks binary, PII-blind secret scan | medium | medium | S16.01 commits `uv.lock` + `uv sync --locked`, SHA-pins actions, checksum-verifies the gitleaks binary, and adds a PII-aware incremental gitleaks config | agents | mitigated (S16.01) |
-| `secrets/` lives inside the public-repo working tree (gitignored, never committed) | low | high | Single `git add -f`/typo/zip away from exposing live keys. Relocate to `~/talisman/secrets/` (the documented external location) as the v1.1 step after S16.01; keep `.gitignore` entries as belt-and-suspenders | Pat / agents | open |
+| `secrets/` lives inside the public-repo working tree (gitignored, never committed) | low | high | Single `git add -f`/typo/zip away from exposing live keys. Relocate to `~/talisman/secrets/` (the documented external location) as the v1.1 step after S16.01; keep `.gitignore` entries as belt-and-suspenders. **Done in S16.02** (moved to `~/talisman/secrets/`; in-repo dir removed) | Pat / agents | mitigated (S16.02) |
