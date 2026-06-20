@@ -1,0 +1,34 @@
+slice_id: S16.06
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No defects found. The slice meets its acceptance criteria: ContainerRunner is a drop-in CommandRunner that builds a rootless-podman invocation on the configured network, disables podman's host proxy inheritance, injects only the intended proxy env vars, mounts only the workspace, does not pass provider key names, and delegates through the credential-scrubbing host runner. Unit tests cover the command construction and delegation, and the integration test proves direct egress from a real --internal-network container fails while AT-14 remains component_verified without grade inflation."
+    required_fix: "None."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Passed on the second pass after a round-1 BLOCK. Codex caught a real proxy-inheritance leak; it was
+    fixed rather than argued.
+  round_1_fixed:
+    - "R1 (blocker): podman defaults to --http-proxy=true, which auto-injects the HOST's proxy variables
+      into the worker container alongside ours — a potential proxy-credential leak and ambiguous routing.
+      Added explicit --http-proxy=false so podman injects nothing, set the lower-case proxy vars too, and
+      asserted both in the unit test. The integration probe was also hardened to actively BYPASS the
+      proxy (unset proxy env + connect direct) and still prove 'Network unreachable' — so the boundary is
+      the network, not proxy cooperation."
+  note: >
+    AT-14 stays COMPONENT_VERIFIED — the containment mechanism is built and proven, but the orchestrator
+    does not yet run workers through it; it flips to PASS in the wiring follow-up.
