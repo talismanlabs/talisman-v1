@@ -10,23 +10,23 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.07 Durable checkpointer (resume survives restart) — review_ready (Claude lead /
-  Codex review). Adds `langgraph-checkpoint-sqlite` + `composition.build_sqlite_checkpointer`; a CI test
-  pauses a gate under one checkpointer and resumes it under a BRAND-NEW checkpointer on the same on-disk
-  DB (a MemorySaver contrast proves it's real). Hardens the v1-waived **AT-04 → PASS** (pulled forward:
-  unattended runs must survive crashes).
-- **Last completed slice:** S16.06 Containerized worker containment / the real egress boundary (merged, PR #35).
-- **Acceptance picture:** 7 PASS end-to-end (AT-01/02/03/04/09/13/20 — AT-13 hardened S16.03, AT-04 S16.07) ·
-  9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · 4 waived &
-  approved (AT-12/16/17/19).
+- **Current slice:** S16.08 Gateway retry with full jitter — review_ready (Claude lead / Codex review).
+  `gateway_client.retrying_transport` wraps any transport with full-jitter backoff (retries transport
+  errors + 429/5xx, honors a numeric Retry-After; non-retryable 4xx surface immediately), wired into
+  `GatewayClient.over_http`. Hardens the v1-waived **AT-12 → PASS** (pulled forward: a transient API blip
+  must not kill an unattended run).
+- **Last completed slice:** S16.07 Durable checkpointer / resume survives restart (merged, PR #36).
+- **Acceptance picture:** 8 PASS end-to-end (AT-01/02/03/04/09/12/13/20 — v1.1 hardened AT-13 S16.03, AT-04 S16.07, AT-12 S16.08) ·
+  9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · 3 waived &
+  approved (AT-16/17/19).
 - **Next work:** continue **v1.1-P1 consolidation** — remaining governed slices: the live Telegram bot
   incl. token redaction (→AT-05), `main.py --serve` (→AT-18); then
   wire the orchestrator to run real workers through the **container runner** end-to-end (the wiring that flips AT-14), then run a supervised live-run — which
-  flips AT-14 and the routed ATs to PASS. Then the remaining approved-waiver features (AT-12/16/17/19; the durable
-  checkpointer AT-04 is now done in S16.07). (Done: S16.01 supply-chain, S16.02 secrets relocation, S16.03 credential-scrub →
-  AT-13 PASS, S16.04 egress proxy decision point, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable checkpointer → AT-04 PASS.)
-- **Current blocker:** awaiting human review + merge of the S16.07 PR.
-- **Next human decision needed:** merge the S16.07 PR; then the next v1.1-P1 slice (live Telegram or
+  flips AT-14 and the routed ATs to PASS. Then the remaining approved-waiver features (AT-16/17 lessons/retro, AT-19 incident; the durable
+  checkpointer AT-04 + gateway-retry AT-12 are now done). (Done: S16.01 supply-chain, S16.02 secrets relocation, S16.03 credential-scrub →
+  AT-13 PASS, S16.04 egress proxy decision point, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable checkpointer → AT-04 PASS, S16.08 gateway retry → AT-12 PASS.)
+- **Current blocker:** awaiting human review + merge of the S16.08 PR.
+- **Next human decision needed:** merge the S16.08 PR; then the next v1.1-P1 slice (live Telegram or
   `--serve`).
 
 ## Build harness status (2026-06-17)
@@ -99,7 +99,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-20 | S16.04 | 16 | Claude Code | Codex CLI | accepted | all five pass; 3 real-socket integration tests (allowed CONNECT tunnels end-to-end; non-allowlisted → 403 via the real policy; non-CONNECT → 501) | `docs/reviews/S16.04.yaml` (block→pass after revise; round-1 caught the proxy-is-cooperative over-claim) | delivers part 1 (decision point) of P0-B; egress proxy component built per ADR-0006; full closure + AT-14 PASS need OS-level containment (part 2: netns/firewall); Codex round-1 blocked the over-claim, reframed | merged (PR #33) |
 | 2026-06-20 | S16.05 | 16 | Claude Code | Codex CLI | accepted | all five pass; `codex_cli` now uses `--skip-git-repo-check` + prompt on stdin; shared runner gained optional stdin; real-subprocess test proves stdin reaches the child; worker contract tests moved to the 4-arg runner | `docs/reviews/S16.05.yaml` (pass; accept) | audit P2-⑧ + AT-08 readiness; AT-08 stays component-verified (flips to PASS on a live Codex run, not exercisable in CI); `claude_code` prompt still argv | merged (PR #34) |
 | 2026-06-20 | S16.06 | 16 | Claude Code | Codex CLI | accepted | all five pass; unit tests cover the podman invocation + an integration test runs a REAL container on an `--internal` network and proves it CANNOT egress (self-skips w/o podman); empirically `--internal` net → "Network unreachable" | `docs/reviews/S16.06.yaml` (block→pass after revise; round-1 caught podman host-proxy inheritance) | **part 2 of P0-B** (ADR-0007; Pat: index on full autonomy → containerized proxy-only workers); the real AT-14 boundary mechanism, proven; AT-14 STAYS component-verified (orchestrator not yet wired to run workers through it; flips to PASS in the wiring follow-up — no inflation) | merged (PR #35) |
-| 2026-06-20 | S16.07 | 16 | Claude Code | Codex CLI | review_ready | all five pass; durable SqliteSaver checkpointer; CI test pauses a gate then resumes under a BRAND-NEW checkpointer on the same on-disk DB (recovered from disk), MemorySaver contrast confirms it's real; added `langgraph-checkpoint-sqlite` dep | `docs/reviews/S16.07.yaml` (pass; accept) | hardens v1-waived **AT-04 → PASS** (pulled forward for autonomy); now **7 PASS / 9 component / 4 waived**; checklist + locking tests updated; in-memory default unchanged for dry-run | request Codex review; open PR; human merge |
+| 2026-06-20 | S16.07 | 16 | Claude Code | Codex CLI | accepted | all five pass; durable SqliteSaver checkpointer; CI test pauses a gate then resumes under a BRAND-NEW checkpointer on the same on-disk DB (recovered from disk), MemorySaver contrast confirms it's real; added `langgraph-checkpoint-sqlite` dep | `docs/reviews/S16.07.yaml` (pass; accept) | hardens v1-waived **AT-04 → PASS** (pulled forward for autonomy); now **7 PASS / 9 component / 4 waived**; checklist + locking tests updated; in-memory default unchanged for dry-run | merged (PR #36) |
+| 2026-06-20 | S16.08 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `gateway_client.retrying_transport` — full-jitter backoff retries transport errors + 429/5xx (honors numeric Retry-After), non-retryable 4xx surface immediately; 5 CI tests (retry-then-succeed, no-retry-4xx, Retry-After, exhaustion, jitter-capped; injected sleep/rand) | `docs/reviews/S16.08.yaml` (block→pass after revise; round-1 caught a 5xx-subset + Retry-After truncation) | hardens v1-waived **AT-12 → PASS** (pulled forward for autonomy); now **8 PASS / 9 component / 3 waived**; wired into `over_http` | request Codex review; open PR; human merge |
 
 ## Decision log
 

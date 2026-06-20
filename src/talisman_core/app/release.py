@@ -24,7 +24,8 @@ founder approved the five remaining waivers after the operator walkthrough. Acce
 five end-to-end PASS criteria (as of 2026-06-19) plus the five approved waivers — it does NOT
 depend on the prototype walkthrough demonstrations, which are tracked separately and harden into
 PASS as the v1.1-P1 governed slices land. v1.1-P1 hardenings so far: AT-13 (credential isolation,
-S16.03, real-child CI test) and AT-04 (durable SqliteSaver checkpointer surviving a restart, S16.07).
+S16.03, real-child CI test), AT-04 (durable SqliteSaver checkpointer surviving a restart, S16.07), and
+AT-12 (full-jitter gateway retry with Retry-After, S16.08).
 """
 
 from __future__ import annotations
@@ -157,14 +158,12 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
     AcceptanceResult(
         "AT-12",
         "Retry jitter",
-        AcceptanceStatus.WAIVED,
-        "Full-jitter retry / Retry-After handling not implemented in the gateway client.",
-        Waiver(
-            "Retry-with-jitter was not built in v1.",
-            "Transient provider HTTP errors are not auto-retried.",
-            "Manual re-run; low frequency at single-session scale; in the v1.1 backlog.",
-            _APPROVED,
-        ),
+        AcceptanceStatus.PASS,
+        "Full-jitter retry with Retry-After handling implemented in the gateway client "
+        "(adapters/gateway_client.retrying_transport, wired into GatewayClient.over_http) and "
+        "CI-tested: transport errors and 429 / any 5xx retry with full-jitter backoff capped at "
+        "max_delay (a numeric Retry-After is honored as a minimum, not truncated); non-retryable 4xx "
+        "surface immediately, and attempts exhaust then re-raise. Hardened from its v1 waiver in S16.08.",
     ),
     AcceptanceResult(
         "AT-13",
@@ -278,7 +277,7 @@ def render_acceptance_checklist() -> str:
         "walkthrough demonstrated several component-verified behaviours using prototype runtime code "
         "built live outside governance — recorded as prototype/operator evidence, not reviewed release "
         "proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then "
-        "AT-04 via S16.07).",
+        "AT-04 via S16.07, then AT-12 via S16.08).",
         "",
         "| Test | Area | Status | Evidence |",
         "|---|---|---|---|",

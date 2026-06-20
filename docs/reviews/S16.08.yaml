@@ -1,0 +1,33 @@
+slice_id: S16.08
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass
+risk_level: low
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No defects found. The slice meets its acceptance criteria: retrying_transport wraps the gateway transport with deterministic-testable full-jitter retry for transport errors plus 429/5xx HTTPStatusError responses, non-retryable 4xx errors surface immediately, numeric Retry-After is honored without truncation below the header value, attempts exhaust by re-raising, GatewayClient.over_http is wired through the retry wrapper, and AT-12/checklist counts are updated without unrelated grade inflation."
+    required_fix: "None."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Passed on the second pass after a round-1 BLOCK. Codex caught two overclaims in the retry policy;
+    both were fixed rather than argued.
+  round_1_fixed:
+    - "R1 (blocker): the retry set was a fixed {429,500,502,503,504} but the claim said '429/5xx' — a 501
+      or 520 would not have retried. Changed to retry 429 + ANY 5xx (500-599) and added 501/520/599
+      boundary tests."
+    - "R2 (blocker): a numeric Retry-After was capped by max_delay (truncated). It is now honored as a
+      server-directed MINIMUM and never truncated below the header value, with a Retry-After-above-cap
+      test."
+  note: >
+    AT-12 PASS now matches the implemented behavior exactly; no unrelated grade change.

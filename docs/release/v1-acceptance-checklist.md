@@ -2,9 +2,9 @@
 
 _Produced by slice S15.01 against the AT-01..AT-20 acceptance test plan (corrected after the independent Codex cross-family review blocked over-claimed PASS grades), then formally accepted in S15.02. Founder approval: docs/release/v1-waiver-approval-2026-06-19.md._
 
-**Summary:** v1 ACCEPTED (2026-06-19). 7 criteria PASS end-to-end (CI/artifacts) · 9 component-verified (several also shown live in the operator walkthrough as prototype evidence; hardening tracked as v1.1-P1) · 4 waived with founder approval.
+**Summary:** v1 ACCEPTED (2026-06-19). 8 criteria PASS end-to-end (CI/artifacts) · 9 component-verified (several also shown live in the operator walkthrough as prototype evidence; hardening tracked as v1.1-P1) · 3 waived with founder approval.
 
-**ACCEPTED 2026-06-19** on five end-to-end PASS criteria plus the five founder-approved waivers (durable approval artifact: docs/release/v1-waiver-approval-2026-06-19.md). The operator walkthrough demonstrated several component-verified behaviours using prototype runtime code built live outside governance — recorded as prototype/operator evidence, not reviewed release proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then AT-04 via S16.07).
+**ACCEPTED 2026-06-19** on five end-to-end PASS criteria plus the five founder-approved waivers (durable approval artifact: docs/release/v1-waiver-approval-2026-06-19.md). The operator walkthrough demonstrated several component-verified behaviours using prototype runtime code built live outside governance — recorded as prototype/operator evidence, not reviewed release proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then AT-04 via S16.07, then AT-12 via S16.08).
 
 | Test | Area | Status | Evidence |
 |---|---|---|---|
@@ -19,7 +19,7 @@ _Produced by slice S15.01 against the AT-01..AT-20 acceptance test plan (correct
 | AT-09 | Cross-family review | pass | 25 structured review artifacts in docs/reviews/ — every slice reviewed by the opposite family, incl. the S15.01 review which blocked an over-claimed release grading. |
 | AT-10 | Budget cap | component_verified | SQLiteBudgetAdapter pauses (BudgetCircuitOpen) on a simulated hard-cap breach (unit-tested, ADR-0004). Not wired to a live model path or a user-alert path. |
 | AT-11 | Gateway pre-call accounting | component_verified | check_call blocks at the cap before a call (unit-tested). Not integrated with a live model request path. |
-| AT-12 | Retry jitter | waived | Full-jitter retry / Retry-After handling not implemented in the gateway client. |
+| AT-12 | Retry jitter | pass | Full-jitter retry with Retry-After handling implemented in the gateway client (adapters/gateway_client.retrying_transport, wired into GatewayClient.over_http) and CI-tested: transport errors and 429 / any 5xx retry with full-jitter backoff capped at max_delay (a numeric Retry-After is honored as a minimum, not truncated); non-retryable 4xx surface immediately, and attempts exhaust then re-raise. Hardened from its v1 waiver in S16.08. |
 | AT-13 | Credential isolation | pass | security/credentials.worker_environment is wired (S16.03) as the single, unbypassable spawn point in workers/_subprocess.default_runner used by both worker adapters; a CI contract test spawns a REAL child process and proves ANTHROPIC_API_KEY / OPENAI_API_KEY / GITHUB_TOKEN are absent from the worker environment (D6). |
 | AT-14 | Egress allowlist | component_verified | Two of three parts done, honestly. (1) Decision point: the gatekeeper CONNECT proxy enforces the allowlist (adapters/egress_proxy.py, ADR-0006, S16.04; 403-vs-tunnel integration-tested). (2) Containment: workers/_container.py runs a worker in a rootless-podman container on an --internal network, and an integration test proves such a container CANNOT egress — a kernel routing failure, not cooperation (ADR-0007, S16.06). (3) Remaining for PASS: the composition root must actually run real workers through the container runner with the proxy as their only off-network route, proven end-to-end (allow + deny + no-bypass). Until that wiring lands this stays component-verified — no inflation. |
 | AT-15 | SQLite persistence | component_verified | Event log + schema persist across connections (unit-tested, S04); a fresh-handle restart was shown in the walkthrough. Prototype/operator evidence only (built live outside the governed slice loop, 2026-06-19; transcript: founder-audit-package/2026-06-19/walkthrough/part2-live-transcript.txt) — NOT reviewed release proof; flips to PASS when its governed v1.1-P1 code lands. A StatePort project-state store remains a v1.1 item; flips to PASS when that store lands. |
@@ -30,12 +30,6 @@ _Produced by slice S15.01 against the AT-01..AT-20 acceptance test plan (correct
 | AT-20 | Bootstrap project | pass | S14.02 ran the governed v1.1-planning spiral to completion through both gates; produced docs/talisman-v1.1-backlog.md. |
 
 ## Waivers (approved by founder 2026-06-19)
-
-### AT-12 — Retry jitter
-- **Reason:** Retry-with-jitter was not built in v1.
-- **Risk:** Transient provider HTTP errors are not auto-retried.
-- **Compensating control:** Manual re-run; low frequency at single-session scale; in the v1.1 backlog.
-- **Approval:** Pat (founder) — APPROVED 2026-06-19 (docs/release/v1-waiver-approval-2026-06-19.md)
 
 ### AT-16 — Retrospective
 - **Reason:** Retro generation was not built in v1 (the memory/ layer is empty).
