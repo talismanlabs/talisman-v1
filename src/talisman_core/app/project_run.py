@@ -38,6 +38,7 @@ class ProjectRunResult:
 
     final_state: SpiralState
     gates_fired: tuple[str, ...]
+    retrospective: str
 
 
 @dataclass
@@ -50,6 +51,30 @@ class _ApproveAllApprover:
         """Record and approve a gate request (the simulated human gate)."""
         self.seen.append(request.gate_id)
         return ApprovalDecision.APPROVE
+
+
+def generate_retrospective(
+    spec: ProjectSpec, final_state: SpiralState, gates_fired: tuple[str, ...]
+) -> str:
+    """Render a markdown retrospective for a completed project run (AT-16).
+
+    Produced automatically at project close: a concise record of what ran — phases
+    completed, gates that fired, artifacts produced, and whether every phase in the spec
+    was reached — so each run leaves a durable, reviewable trace.
+    """
+    completed = final_state["completed_phases"]
+    artifacts = final_state["artifacts"]
+    outcome = "completed" if set(spec.phases) <= set(completed) else "incomplete"
+    lines = [
+        f"# Retrospective — {spec.project_id}",
+        "",
+        f"- Outcome: {outcome}",
+        f"- Tier: {spec.tier}",
+        f"- Phases completed: {', '.join(completed) if completed else '(none)'}",
+        f"- Gates fired: {', '.join(gates_fired) if gates_fired else '(none)'}",
+        f"- Artifacts produced: {len(artifacts)}",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def run_project(
@@ -76,4 +101,5 @@ def run_project(
         spec.project_id, list(spec.phases), resolved_approver, tier=spec.tier
     )
     gates_fired = tuple(getattr(resolved_approver, "seen", ()))
-    return ProjectRunResult(final_state=final, gates_fired=gates_fired)
+    retrospective = generate_retrospective(spec, final, gates_fired)
+    return ProjectRunResult(final_state=final, gates_fired=gates_fired, retrospective=retrospective)

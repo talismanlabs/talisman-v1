@@ -25,7 +25,8 @@ five end-to-end PASS criteria (as of 2026-06-19) plus the five approved waivers 
 depend on the prototype walkthrough demonstrations, which are tracked separately and harden into
 PASS as the v1.1-P1 governed slices land. v1.1-P1 hardenings so far: AT-13 (credential isolation,
 S16.03, real-child CI test), AT-04 (durable SqliteSaver checkpointer surviving a restart, S16.07), and
-AT-12 (full-jitter gateway retry with Retry-After, S16.08).
+AT-12 (full-jitter gateway retry with Retry-After, S16.08), and AT-16 (automatic retrospective at
+project close, S16.11).
 """
 
 from __future__ import annotations
@@ -198,14 +199,10 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
     AcceptanceResult(
         "AT-16",
         "Retrospective",
-        AcceptanceStatus.WAIVED,
-        "Automated markdown retrospective generation not implemented.",
-        Waiver(
-            "Retro generation was not built in v1 (the memory/ layer is empty).",
-            "No automatic retrospective at project close.",
-            "Manual retro; the lessons table exists; in the v1.1 backlog.",
-            _APPROVED,
-        ),
+        AcceptanceStatus.PASS,
+        "app/project_run.generate_retrospective renders a markdown retrospective (outcome, phases "
+        "completed, gates fired, artifacts) and run_project produces it automatically at every project "
+        "close; CI-tested (tests/app/test_project_run.py). Hardened from its v1 waiver in S16.11.",
     ),
     AcceptanceResult(
         "AT-17",
@@ -279,7 +276,7 @@ def render_acceptance_checklist() -> str:
         "walkthrough demonstrated several component-verified behaviours using prototype runtime code "
         "built live outside governance — recorded as prototype/operator evidence, not reviewed release "
         "proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then "
-        "AT-04 via S16.07, then AT-12 via S16.08).",
+        "AT-04 via S16.07, AT-12 via S16.08, then AT-16 via S16.11).",
         "",
         "| Test | Area | Status | Evidence |",
         "|---|---|---|---|",

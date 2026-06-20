@@ -1,0 +1,25 @@
+slice_id: S16.11
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass_with_notes
+risk_level: low
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "Non-blocking documentation inconsistency: docs/progress/progress-ledger.md still says 'last 3 waivers (AT-16/17 lessons/retro, AT-19 incident dump)' after this slice moves AT-16 to PASS and leaves only AT-17/AT-19 waived. The slice ledger row, release checklist, and acceptance counts are otherwise consistent."
+    required_fix: "None for acceptance; correct the stale summary line before merge if touching the ledger."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Pass with one low documentation note, fixed in-slice: corrected a stale ledger summary line that
+    still read "last 3 waivers (AT-16/17 ...)" — AT-16 is now PASS, so only AT-17 and AT-19 remain
+    waived. The slice ledger row, checklist, and acceptance counts were already consistent.
