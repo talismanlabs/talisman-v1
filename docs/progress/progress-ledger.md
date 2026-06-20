@@ -10,24 +10,26 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.09 Generic project intake — review_ready (Claude lead / Codex review).
-  `app/project_run.ProjectSpec` + `run_project` runs ANY project (id / phase sequence / gate set)
-  through the governed spiral; a CI test proves a brand-new greenfield project runs end to end with its
-  own gates — the **structural endpoint of "test a completely new project"** (deterministic; the live
-  version swaps stub→real workers = the human-gated live run). Additive; no grade change (AT-20 PASS).
-- **Last completed slice:** S16.08 Gateway retry with full jitter (merged, PR #37).
+- **Current slice:** S16.10 `--serve` runtime — review_ready (Claude lead / Codex review). Lands the
+  stashed `main.py --serve` runtime as a governed slice: `_ServiceRunner` runs a signal-driven heartbeat
+  loop (the long-lived process systemd keeps alive), unit-tested (start/beat/stop on SIGTERM/SIGINT). **No
+  real workers or spend** — a deterministic service loop. AT-18 evidence updated (runtime governed) but
+  stays component-verified (the live kill→restart needs real systemd, operator-verified not CI).
+- **Last completed slice:** S16.09 Generic project intake / a greenfield project runs the spiral (merged, PR #38).
 - **Acceptance picture:** 8 PASS end-to-end (AT-01/02/03/04/09/12/13/20 — v1.1 hardened AT-13 S16.03, AT-04 S16.07, AT-12 S16.08) ·
   9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · 3 waived &
   approved (AT-16/17/19).
 - **Next work:** continue **v1.1-P1 consolidation** — remaining governed slices: the live Telegram bot
-  incl. token redaction (→AT-05), `main.py --serve` (→AT-18); then
+  incl. token redaction (→AT-05); then
   wire the orchestrator to run real workers through the **container runner** end-to-end (the wiring that flips AT-14), then run a supervised live-run — which
   flips AT-14 and the routed ATs to PASS. Then the remaining approved-waiver features (AT-16/17 lessons/retro, AT-19 incident; the durable
   checkpointer AT-04 + gateway-retry AT-12 are now done). (Done: S16.01 supply-chain, S16.02 secrets relocation, S16.03 credential-scrub →
-  AT-13 PASS, S16.04 egress proxy decision point, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable checkpointer → AT-04 PASS, S16.08 gateway retry → AT-12 PASS, S16.09 generic project intake — a greenfield project provably runs the governed spiral.)
-- **Current blocker:** awaiting human review + merge of the S16.09 PR.
-- **Next human decision needed:** merge the S16.09 PR; then the next v1.1-P1 slice (live Telegram or
-  `--serve`).
+  AT-13 PASS, S16.04 egress proxy decision point, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable checkpointer → AT-04 PASS, S16.08 gateway retry → AT-12 PASS, S16.09 generic project intake — a greenfield project provably runs the governed spiral, S16.10 --serve runtime built.)
+- **Current blocker:** awaiting human review + merge of the S16.10 PR.
+- **Next human decision needed:** merge the S16.10 PR. The structural goal (run a new project through the
+  governed spiral) + the always-on runtime are now built; the high-value next step is the **live run**
+  (real containerized workers + real spend) — a human-authorized gate, plus a deploy box. Remaining
+  autonomous polish: the last 3 waivers (AT-16/17 lessons/retro, AT-19 incident dump) and live Telegram.
 
 ## Build harness status (2026-06-17)
 
@@ -101,7 +103,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-20 | S16.06 | 16 | Claude Code | Codex CLI | accepted | all five pass; unit tests cover the podman invocation + an integration test runs a REAL container on an `--internal` network and proves it CANNOT egress (self-skips w/o podman); empirically `--internal` net → "Network unreachable" | `docs/reviews/S16.06.yaml` (block→pass after revise; round-1 caught podman host-proxy inheritance) | **part 2 of P0-B** (ADR-0007; Pat: index on full autonomy → containerized proxy-only workers); the real AT-14 boundary mechanism, proven; AT-14 STAYS component-verified (orchestrator not yet wired to run workers through it; flips to PASS in the wiring follow-up — no inflation) | merged (PR #35) |
 | 2026-06-20 | S16.07 | 16 | Claude Code | Codex CLI | accepted | all five pass; durable SqliteSaver checkpointer; CI test pauses a gate then resumes under a BRAND-NEW checkpointer on the same on-disk DB (recovered from disk), MemorySaver contrast confirms it's real; added `langgraph-checkpoint-sqlite` dep | `docs/reviews/S16.07.yaml` (pass; accept) | hardens v1-waived **AT-04 → PASS** (pulled forward for autonomy); now **7 PASS / 9 component / 4 waived**; checklist + locking tests updated; in-memory default unchanged for dry-run | merged (PR #36) |
 | 2026-06-20 | S16.08 | 16 | Claude Code | Codex CLI | accepted | all five pass; `gateway_client.retrying_transport` — full-jitter backoff retries transport errors + 429/5xx (honors numeric Retry-After), non-retryable 4xx surface immediately; 5 CI tests (retry-then-succeed, no-retry-4xx, Retry-After, exhaustion, jitter-capped; injected sleep/rand) | `docs/reviews/S16.08.yaml` (block→pass after revise; round-1 caught a 5xx-subset + Retry-After truncation) | hardens v1-waived **AT-12 → PASS** (pulled forward for autonomy); now **8 PASS / 9 component / 3 waived**; wired into `over_http` | merged (PR #37) |
-| 2026-06-20 | S16.09 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `app/project_run` ProjectSpec + run_project runs any project through the governed spiral; 3 CI tests prove a brand-new greenfield project runs end-to-end with its own gates, a differently-shaped project runs, and a custom approver plugs in | `docs/reviews/S16.09.yaml` (pass; accept) | **structural endpoint of "test a new project"** — agnosticism demonstrated (deterministic; real workers = the human-gated live run); additive, bootstrap unchanged; no grade change (AT-20 already PASS) | request Codex review; open PR; human merge |
+| 2026-06-20 | S16.09 | 16 | Claude Code | Codex CLI | accepted | all five pass; `app/project_run` ProjectSpec + run_project runs any project through the governed spiral; 3 CI tests prove a brand-new greenfield project runs end-to-end with its own gates, a differently-shaped project runs, and a custom approver plugs in | `docs/reviews/S16.09.yaml` (pass; accept) | **structural endpoint of "test a new project"** — agnosticism demonstrated (deterministic; real workers = the human-gated live run); additive, bootstrap unchanged; no grade change (AT-20 already PASS) | merged (PR #38) |
+| 2026-06-20 | S16.10 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `main.py --serve` runtime landed (was stashed) — `_ServiceRunner` signal-driven heartbeat loop, 3 CI tests (arg parser, start/beat/stop on signal, main dispatch); no real workers/spend | `docs/reviews/S16.10.yaml` (block→pass after revise; round-1 caught the systemd unit not launching --serve) | the always-on service systemd keeps alive (AT-18); AT-18 evidence updated but stays component-verified (live kill→restart needs real systemd, operator-verified not CI); no inflation | request Codex review; open PR; human merge |
 
 ## Decision log
 

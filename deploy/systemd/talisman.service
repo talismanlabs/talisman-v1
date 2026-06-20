@@ -6,7 +6,7 @@ Wants=talisman-gateway.service
 [Service]
 Type=simple
 WorkingDirectory=%h/TalisMan
-ExecStart=%h/TalisMan/.venv/bin/python -m talisman_core.main --config %h/TalisMan/config/config.yaml
+ExecStart=%h/TalisMan/.venv/bin/python -m talisman_core.main --serve --config %h/TalisMan/config/config.yaml
 Restart=on-failure
 RestartSec=10
 Environment=PYTHONUNBUFFERED=1

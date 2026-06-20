@@ -224,8 +224,10 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
         "systemd recovery",
         AcceptanceStatus.COMPONENT_VERIFIED,
         "Unit files built; Restart=on-failure + gateway-first ordering verified byte-match canonical "
-        "(S13.01). A live kill -9 → auto-restart (via `--serve`) was shown in the walkthrough. "
-        f"{_PROTOTYPE} (the --serve service runtime is a v1.1-P1 slice).",
+        "(S13.01). The `--serve` service runtime the unit launches is now built + governed (S16.10): a "
+        "signal-driven heartbeat loop, unit-tested (starts, beats, stops cleanly on SIGTERM/SIGINT). The "
+        "live kill -9 → auto-restart needs a real `systemd --user` and is operator-verified, not CI; it "
+        "flips to PASS at that operator step.",
     ),
     AcceptanceResult(
         "AT-19",

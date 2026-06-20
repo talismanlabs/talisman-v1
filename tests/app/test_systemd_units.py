@@ -29,6 +29,7 @@ def test_orchestrator_unit_restarts_after_gateway_unit() -> None:
     assert "Restart=on-failure\n" in unit
     assert "After=custom-gateway.service\n" in unit
     assert "Wants=custom-gateway.service\n" in unit
+    assert "-m talisman_core.main --serve" in unit  # the unit launches the persistent service
 
 
 def test_rendered_units_do_not_embed_secret_like_assignments() -> None:
