@@ -55,3 +55,16 @@ def test_a_custom_approval_channel_plugs_into_the_same_seam() -> None:
     assert approver.seen == ["p-x:plan"]
     assert result.gates_fired == ("p-x:plan",)
     assert result.final_state["completed_phases"] == ["interview", "plan", "review"]
+
+
+def test_a_project_close_produces_a_retrospective() -> None:
+    """Every run produces a markdown retrospective at close (AT-16)."""
+    spec = ProjectSpec("retro-demo", ("interview", "plan", "review"), frozenset({"plan"}))
+
+    result = run_project(spec)
+
+    retro = result.retrospective
+    assert "# Retrospective — retro-demo" in retro
+    assert "Outcome: completed" in retro
+    assert "interview, plan, review" in retro  # the phases it completed
+    assert "retro-demo:plan" in retro  # the gate that fired

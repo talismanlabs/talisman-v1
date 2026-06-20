@@ -2,9 +2,9 @@
 
 _Produced by slice S15.01 against the AT-01..AT-20 acceptance test plan (corrected after the independent Codex cross-family review blocked over-claimed PASS grades), then formally accepted in S15.02. Founder approval: docs/release/v1-waiver-approval-2026-06-19.md._
 
-**Summary:** v1 ACCEPTED (2026-06-19). 8 criteria PASS end-to-end (CI/artifacts) · 9 component-verified (several also shown live in the operator walkthrough as prototype evidence; hardening tracked as v1.1-P1) · 3 waived with founder approval.
+**Summary:** v1 ACCEPTED (2026-06-19). 9 criteria PASS end-to-end (CI/artifacts) · 9 component-verified (several also shown live in the operator walkthrough as prototype evidence; hardening tracked as v1.1-P1) · 2 waived with founder approval.
 
-**ACCEPTED 2026-06-19** on five end-to-end PASS criteria plus the five founder-approved waivers (durable approval artifact: docs/release/v1-waiver-approval-2026-06-19.md). The operator walkthrough demonstrated several component-verified behaviours using prototype runtime code built live outside governance — recorded as prototype/operator evidence, not reviewed release proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then AT-04 via S16.07, then AT-12 via S16.08).
+**ACCEPTED 2026-06-19** on five end-to-end PASS criteria plus the five founder-approved waivers (durable approval artifact: docs/release/v1-waiver-approval-2026-06-19.md). The operator walkthrough demonstrated several component-verified behaviours using prototype runtime code built live outside governance — recorded as prototype/operator evidence, not reviewed release proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then AT-04 via S16.07, AT-12 via S16.08, then AT-16 via S16.11).
 
 | Test | Area | Status | Evidence |
 |---|---|---|---|
@@ -23,19 +23,13 @@ _Produced by slice S15.01 against the AT-01..AT-20 acceptance test plan (correct
 | AT-13 | Credential isolation | pass | security/credentials.worker_environment is wired (S16.03) as the single, unbypassable spawn point in workers/_subprocess.default_runner used by both worker adapters; a CI contract test spawns a REAL child process and proves ANTHROPIC_API_KEY / OPENAI_API_KEY / GITHUB_TOKEN are absent from the worker environment (D6). |
 | AT-14 | Egress allowlist | component_verified | Two of three parts done, honestly. (1) Decision point: the gatekeeper CONNECT proxy enforces the allowlist (adapters/egress_proxy.py, ADR-0006, S16.04; 403-vs-tunnel integration-tested). (2) Containment: workers/_container.py runs a worker in a rootless-podman container on an --internal network, and an integration test proves such a container CANNOT egress — a kernel routing failure, not cooperation (ADR-0007, S16.06). (3) Remaining for PASS: the composition root must actually run real workers through the container runner with the proxy as their only off-network route, proven end-to-end (allow + deny + no-bypass). Until that wiring lands this stays component-verified — no inflation. |
 | AT-15 | SQLite persistence | component_verified | Event log + schema persist across connections (unit-tested, S04); a fresh-handle restart was shown in the walkthrough. Prototype/operator evidence only (built live outside the governed slice loop, 2026-06-19; transcript: founder-audit-package/2026-06-19/walkthrough/part2-live-transcript.txt) — NOT reviewed release proof; flips to PASS when its governed v1.1-P1 code lands. A StatePort project-state store remains a v1.1 item; flips to PASS when that store lands. |
-| AT-16 | Retrospective | waived | Automated markdown retrospective generation not implemented. |
+| AT-16 | Retrospective | pass | app/project_run.generate_retrospective renders a markdown retrospective (outcome, phases completed, gates fired, artifacts) and run_project produces it automatically at every project close; CI-tested (tests/app/test_project_run.py). Hardened from its v1 waiver in S16.11. |
 | AT-17 | Lessons retrieval | waived | Lessons retrieval/surfacing at intake not implemented (S14.03 deferred). |
 | AT-18 | systemd recovery | component_verified | Unit files built; Restart=on-failure + gateway-first ordering verified byte-match canonical (S13.01). The `--serve` service runtime the unit launches is now built + governed (S16.10): a signal-driven heartbeat loop, unit-tested (starts, beats, stops cleanly on SIGTERM/SIGINT). The live kill -9 → auto-restart needs a real `systemd --user` and is operator-verified, not CI; it flips to PASS at that operator step. |
 | AT-19 | Incident dump | waived | Automated catastrophic-halt state dump not implemented. |
 | AT-20 | Bootstrap project | pass | S14.02 ran the governed v1.1-planning spiral to completion through both gates; produced docs/talisman-v1.1-backlog.md. |
 
 ## Waivers (approved by founder 2026-06-19)
-
-### AT-16 — Retrospective
-- **Reason:** Retro generation was not built in v1 (the memory/ layer is empty).
-- **Risk:** No automatic retrospective at project close.
-- **Compensating control:** Manual retro; the lessons table exists; in the v1.1 backlog.
-- **Approval:** Pat (founder) — APPROVED 2026-06-19 (docs/release/v1-waiver-approval-2026-06-19.md)
 
 ### AT-17 — Lessons retrieval
 - **Reason:** Lessons retrieval was not built in v1.
