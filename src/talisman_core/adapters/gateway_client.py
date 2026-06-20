@@ -9,6 +9,8 @@ provider call.
 
 from __future__ import annotations
 
+import random
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -59,6 +61,68 @@ def http_transport(base_url: str, gateway_secret: str) -> GatewayTransport:
     return transport
 
 
+def _is_retryable_status(status: int) -> bool:
+    """Retry rate-limiting (429) and any transient server error (5xx); other 4xx are client
+    errors that must surface immediately rather than being retried."""
+    return status == 429 or 500 <= status <= 599
+
+
+def _retry_after_seconds(response: httpx.Response) -> float | None:
+    """Parse a numeric Retry-After header (seconds); the HTTP-date form is ignored."""
+    raw = response.headers.get("Retry-After")
+    if raw is None:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
+def retrying_transport(
+    inner: GatewayTransport,
+    *,
+    max_attempts: int = 4,
+    base_delay: float = 0.5,
+    max_delay: float = 30.0,
+    sleep: Callable[[float], None] = time.sleep,
+    rand: Callable[[], float] = random.random,
+) -> GatewayTransport:
+    """Wrap a transport with full-jitter retry on transient gateway failures.
+
+    Retries transport errors and 429 / any 5xx responses up to ``max_attempts`` with
+    full-jitter exponential backoff capped at ``max_delay``; a numeric Retry-After is honored
+    as a MINIMUM delay (never truncated below the header value). Any non-retryable status
+    (e.g. a 4xx other than 429) propagates immediately, so a transient blip cannot kill an
+    unattended run while a real error still surfaces. ``sleep`` and ``rand`` are injected so
+    the backoff is deterministic under test.
+    """
+    if max_attempts < 1:
+        message = "max_attempts must be >= 1"
+        raise ValueError(message)
+
+    def transport(request: GatewayRequest) -> GatewayResult:
+        attempt = 1
+        while True:
+            retry_after: float | None = None
+            try:
+                return inner(request)
+            except httpx.HTTPStatusError as exc:
+                if not _is_retryable_status(exc.response.status_code) or attempt >= max_attempts:
+                    raise
+                retry_after = _retry_after_seconds(exc.response)
+            except httpx.TransportError:
+                if attempt >= max_attempts:
+                    raise
+            # Full-jitter exponential backoff, capped at max_delay; but a server-directed
+            # Retry-After is honored as a MINIMUM and never truncated below the header value.
+            capped = min(max_delay, base_delay * (2.0 ** (attempt - 1)))
+            delay = retry_after if retry_after is not None else rand() * capped
+            sleep(delay)
+            attempt += 1
+
+    return transport
+
+
 class GatewayClient:
     """Submit model requests through the TalisMan gateway (implements ``GatewayPort``).
 
@@ -72,8 +136,9 @@ class GatewayClient:
 
     @classmethod
     def over_http(cls, base_url: str, gateway_secret: str) -> GatewayClient:
-        """Build a client that talks to the host-side gateway service over HTTP."""
-        return cls(http_transport(base_url, gateway_secret))
+        """Build a client that talks to the host-side gateway over HTTP, with full-jitter
+        retry on transient failures so a blip cannot kill an unattended run."""
+        return cls(retrying_transport(http_transport(base_url, gateway_secret)))
 
     def submit_model_request(self, request: GatewayRequest) -> GatewayResult:
         """Route the request through the gateway transport and return its result."""
