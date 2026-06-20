@@ -184,13 +184,14 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
         "AT-14",
         "Egress allowlist",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "Default-deny egress policy built + unit-tested incl. bypass classes (security/egress.py). The "
-        "gatekeeper CONNECT proxy — the allowlist DECISION point — is built under governance "
-        "(adapters/egress_proxy.py, ADR-0006, S16.04) and integration-tested: a non-allowlisted CONNECT "
-        "is refused 403 and an allowlisted target tunnels end-to-end. This is necessary but not "
-        "sufficient: env-var routing (HTTPS_PROXY) is cooperative and bypassable, so AT-14 flips to PASS "
-        "only once egress is ENFORCED at the OS level (network namespace / firewall) so a worker cannot "
-        "reach the network except through the proxy — proven by a test that direct egress is blocked.",
+        "Two of three parts done, honestly. (1) Decision point: the gatekeeper CONNECT proxy enforces "
+        "the allowlist (adapters/egress_proxy.py, ADR-0006, S16.04; 403-vs-tunnel integration-tested). "
+        "(2) Containment: workers/_container.py runs a worker in a rootless-podman container on an "
+        "--internal network, and an integration test proves such a container CANNOT egress — a kernel "
+        "routing failure, not cooperation (ADR-0007, S16.06). (3) Remaining for PASS: the composition "
+        "root must actually run real workers through the container runner with the proxy as their only "
+        "off-network route, proven end-to-end (allow + deny + no-bypass). Until that wiring lands this "
+        "stays component-verified — no inflation.",
     ),
     AcceptanceResult(
         "AT-15",
