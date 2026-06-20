@@ -10,12 +10,15 @@ S14.02, injected through the same seams with no change to this wiring.
 
 from __future__ import annotations
 
+import sqlite3
 import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, cast
 
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
 from talisman_core.observability.logs import StructuredLogger
@@ -139,6 +142,21 @@ class TalismanApp:
             artifacts=final["artifacts"],
         )
         return final
+
+
+def build_sqlite_checkpointer(db_path: Path) -> SqliteSaver:
+    """Build a durable LangGraph checkpointer backed by a SQLite file (S16.07, AT-04).
+
+    Unlike the in-memory default, a checkpoint written here survives the process: a fresh
+    checkpointer opened on the same file recovers a paused run, so an unattended run resumes
+    from where it stopped after a crash or restart. ``check_same_thread=False`` permits the
+    scheduler/graph to resume on a different thread than the one that paused it.
+    """
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(str(db_path), check_same_thread=False)
+    checkpointer = SqliteSaver(connection)
+    checkpointer.setup()
+    return checkpointer
 
 
 def build_application(
