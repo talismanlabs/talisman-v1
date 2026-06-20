@@ -31,16 +31,20 @@ class CommandResult:
 
 # A command runner executes a CLI command in a working directory and returns its
 # result. Injected into the adapters so their contract is testable without the real CLI.
-CommandRunner = Callable[[list[str], Path, int], CommandResult]
+CommandRunner = Callable[[list[str], Path, int, str | None], CommandResult]
 
 
-def default_runner(args: list[str], cwd: Path, timeout_seconds: int) -> CommandResult:
+def default_runner(
+    args: list[str], cwd: Path, timeout_seconds: int, stdin_text: str | None = None
+) -> CommandResult:
     """Run a worker command via ``subprocess`` with a credential-scrubbed environment.
 
     The child receives ``worker_environment()`` — the orchestrator's environment minus
     the long-lived provider/cloud secrets — so the worker never inherits the
     orchestrator's raw keys (D6 / AT-13). Everything else (PATH, HOME, ...) is preserved
-    so the worker CLI still runs.
+    so the worker CLI still runs. ``stdin_text``, when given, is fed to the child's stdin
+    (S16.05) — used to pass a worker prompt off the command line so it never appears in
+    ``ps`` / ``/proc/<pid>/cmdline`` (audit P2-⑧).
     """
     completed = subprocess.run(
         args,
@@ -50,5 +54,6 @@ def default_runner(args: list[str], cwd: Path, timeout_seconds: int) -> CommandR
         timeout=timeout_seconds,
         check=False,
         env=worker_environment(),
+        input=stdin_text,
     )
     return CommandResult(exit_code=completed.returncode, stdout=completed.stdout)

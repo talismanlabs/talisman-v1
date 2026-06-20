@@ -51,3 +51,14 @@ def test_default_runner_preserves_non_secret_environment(
 
     assert result.exit_code == 0
     assert result.stdout.strip() == "keep-me False"
+
+
+def test_default_runner_passes_stdin_to_the_child(tmp_path: Path) -> None:
+    """``stdin_text`` is delivered to the child process's standard input (S16.05) — this is
+    how a worker prompt is passed off the command line (out of ps / /proc)."""
+    code = "import sys; sys.stdout.write(sys.stdin.read().upper())"
+
+    result = default_runner([sys.executable, "-c", code], tmp_path, 30, "prompt via stdin")
+
+    assert result.exit_code == 0
+    assert result.stdout == "PROMPT VIA STDIN"

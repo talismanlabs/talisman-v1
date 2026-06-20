@@ -29,8 +29,11 @@ class CodexCliWorker:
         workspace, and the captured transcript is written as an auditable artifact.
         """
         prompt = request.prompt_path.read_text(encoding="utf-8")
-        args = ["codex", "exec", prompt]
-        result = self._runner(args, request.workspace_path, request.timeout_seconds)
+        # Pass the prompt on stdin (the ``-`` argument) instead of argv so it stays out of
+        # ps / /proc, and skip the git-repo check so the CLI runs in any workspace (S16.05,
+        # AT-08; the invocation Codex CLI actually requires).
+        args = ["codex", "exec", "--skip-git-repo-check", "-"]
+        result = self._runner(args, request.workspace_path, request.timeout_seconds, prompt)
         transcript_path = request.workspace_path / f"{request.slice_id}.transcript.txt"
         transcript_path.write_text(result.stdout, encoding="utf-8")
         return WorkerResult(

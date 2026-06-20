@@ -31,7 +31,7 @@ class ClaudeCodeWorker:
         """
         prompt = request.prompt_path.read_text(encoding="utf-8")
         args = ["claude", "-p", prompt]
-        result = self._runner(args, request.workspace_path, request.timeout_seconds)
+        result = self._runner(args, request.workspace_path, request.timeout_seconds, None)
         transcript_path = request.workspace_path / f"{request.slice_id}.transcript.txt"
         transcript_path.write_text(result.stdout, encoding="utf-8")
         return WorkerResult(

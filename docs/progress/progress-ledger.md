@@ -10,23 +10,21 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.04 Egress gatekeeper proxy (decision point) — review_ready (Claude lead / Codex
-  review). Adds `adapters/egress_proxy.py`, a loopback CONNECT proxy that evaluates `security.egress`
-  (tunnels allowed hosts, refuses others 403, refuses non-CONNECT 501), with real-socket integration
-  tests. Per ADR-0006. This is **part 1** of audit finding P0-B (the allowlist decision point); a real
-  egress boundary also needs **part 2** — OS-level containment (netns/firewall) forcing workers through
-  the proxy — so AT-14 stays component-verified (env-var routing alone is cooperative/bypassable; Codex
-  round-1 blocked the initial over-claim, now reframed).
-- **Last completed slice:** S16.03 Wire credential scrub into the worker subprocess runner (merged, PR #32).
+- **Current slice:** S16.05 Fix the Codex worker invocation — review_ready (Claude lead / Codex review).
+  The shared runner now accepts optional stdin; `codex_cli` runs `codex exec --skip-git-repo-check -`
+  with the prompt on stdin (out of ps/proc; the invocation Codex CLI requires), `claude_code` unchanged
+  (prompt still argv). A real-subprocess test proves stdin reaches the child. AT-08 evidence updated but
+  stays COMPONENT_VERIFIED (flips to PASS only on a live Codex run, not exercisable in CI). Audit P2-⑧.
+- **Last completed slice:** S16.04 Egress gatekeeper proxy / decision point (merged, PR #33).
 - **Acceptance picture:** 6 PASS end-to-end (AT-01/02/03/09/13/20 — AT-13 hardened to PASS in S16.03) ·
   9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · 5 waived &
   approved (AT-04/12/16/17/19).
 - **Next work:** continue **v1.1-P1 consolidation** — remaining governed slices: the live Telegram bot
-  incl. token redaction (→AT-05), `main.py --serve` (→AT-18), and the Codex-invocation fix (→AT-08); then
+  incl. token redaction (→AT-05), `main.py --serve` (→AT-18); then
   add OS-level egress containment (part 2 of P0-B: netns/firewall forcing workers through the proxy, blocking direct egress), wire workers + clients through it, and run a supervised live-run — which
   flips AT-14 and the routed ATs to PASS. Then the five approved-waiver features starting with the durable
   checkpointer (AT-04). (Done: S16.01 supply-chain, S16.02 secrets relocation, S16.03 credential-scrub →
-  AT-13 PASS, S16.04 egress proxy decision point built.)
+  AT-13 PASS, S16.04 egress proxy decision point, S16.05 Codex invocation fix.)
 - **Current blocker:** awaiting human review + merge of the S16.04 PR.
 - **Next human decision needed:** merge the S16.04 PR; then the next v1.1-P1 slice (live Telegram or
   `--serve`).
@@ -98,7 +96,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-19 | S16.01 | 16 | Claude Code | Codex CLI | accepted | all five pass locally via `uv sync --locked`; gitleaks default full-history scan + PII-config incremental scan both clean locally | `docs/reviews/S16.01.yaml` (pass_with_notes → accept; 2 low notes, no change needed) | supply-chain + review-gate hardening from the 2026-06-19 cross-family audit; PII rules run incrementally to avoid re-flagging redacted history | merged (PR #30) |
 | 2026-06-19 | S16.02 | 16 | Claude Code | Codex CLI | accepted | deterministic checks green (docs/ops only); 5 secret files moved + verified by name+size; in-repo `secrets/` removed | `docs/reviews/S16.02.yaml` (pass; accept) | closes audit P2-①; canonical config already points at `~/talisman/secrets/` so no consumer breaks; dated audit-package snapshot left intact | merged (PR #31) |
 | 2026-06-20 | S16.03 | 16 | Claude Code | Codex CLI | accepted | all five pass; new real-subprocess contract test spawns a child and proves ANTHROPIC/OPENAI/GITHUB keys absent; both adapters deduped onto the shared scrubbing `default_runner` | `docs/reviews/S16.03.yaml` (pass; accept) | closes audit P0-A; **AT-13 COMPONENT_VERIFIED→PASS** (now 6 PASS / 9 component / 5 waived); checklist regenerated; deduped runner resolves the S07.01 plumbing-duplication finding | merged (PR #32) |
-| 2026-06-20 | S16.04 | 16 | Claude Code | Codex CLI | review_ready | all five pass; 3 real-socket integration tests (allowed CONNECT tunnels end-to-end; non-allowlisted → 403 via the real policy; non-CONNECT → 501) | `docs/reviews/S16.04.yaml` (block→pass after revise; round-1 caught the proxy-is-cooperative over-claim) | delivers part 1 (decision point) of P0-B; egress proxy component built per ADR-0006; full closure + AT-14 PASS need OS-level containment (part 2: netns/firewall); Codex round-1 blocked the over-claim, reframed | request Codex review; open PR; human merge |
+| 2026-06-20 | S16.04 | 16 | Claude Code | Codex CLI | accepted | all five pass; 3 real-socket integration tests (allowed CONNECT tunnels end-to-end; non-allowlisted → 403 via the real policy; non-CONNECT → 501) | `docs/reviews/S16.04.yaml` (block→pass after revise; round-1 caught the proxy-is-cooperative over-claim) | delivers part 1 (decision point) of P0-B; egress proxy component built per ADR-0006; full closure + AT-14 PASS need OS-level containment (part 2: netns/firewall); Codex round-1 blocked the over-claim, reframed | merged (PR #33) |
+| 2026-06-20 | S16.05 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `codex_cli` now uses `--skip-git-repo-check` + prompt on stdin; shared runner gained optional stdin; real-subprocess test proves stdin reaches the child; worker contract tests moved to the 4-arg runner | `docs/reviews/S16.05.yaml` (pass; accept) | audit P2-⑧ + AT-08 readiness; AT-08 stays component-verified (flips to PASS on a live Codex run, not exercisable in CI); `claude_code` prompt still argv | request Codex review; open PR; human merge |
 
 ## Decision log
 
