@@ -23,9 +23,8 @@ Acceptance status: TalisMan v1 is ACCEPTED (2026-06-19; see the approval artifac
 founder approved the five remaining waivers after the operator walkthrough. Acceptance stood on
 five end-to-end PASS criteria (as of 2026-06-19) plus the five approved waivers — it does NOT
 depend on the prototype walkthrough demonstrations, which are tracked separately and harden into
-PASS as the v1.1-P1 governed slices land. v1.1-P1 update: AT-13 (credential isolation) is the
-first to harden to PASS — S16.03 wired the credential scrub into the worker subprocess runner with
-a real-child CI test.
+PASS as the v1.1-P1 governed slices land. v1.1-P1 hardenings so far: AT-13 (credential isolation,
+S16.03, real-child CI test) and AT-04 (durable SqliteSaver checkpointer surviving a restart, S16.07).
 """
 
 from __future__ import annotations
@@ -96,16 +95,12 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
     AcceptanceResult(
         "AT-04",
         "LangGraph pause/resume",
-        AcceptanceStatus.WAIVED,
-        "In-process gate interrupt/resume verified (workflow tests + S14.02); but the "
-        "checkpointer is in-memory MemorySaver, so resume does NOT survive a process restart.",
-        Waiver(
-            "Durable LangGraph checkpointer (SqliteSaver) not wired; only in-memory MemorySaver.",
-            "A crash mid-gate loses the paused workflow checkpoint.",
-            "Single supervised session in v1; gates are re-requestable; durable checkpointer is "
-            "the first v1.1 feature project.",
-            _APPROVED,
-        ),
+        AcceptanceStatus.PASS,
+        "Durable resume survives a process restart (hardened from its v1 waiver in S16.07): "
+        "composition.build_sqlite_checkpointer wires a SqliteSaver, and a CI test "
+        "(tests/app/test_durable_checkpointer.py) pauses a gate under one checkpointer and resumes it "
+        "under a BRAND-NEW checkpointer on the same on-disk DB — recovering the paused run from disk "
+        "(a contrast test confirms MemorySaver loses it).",
     ),
     AcceptanceResult(
         "AT-05",
@@ -282,8 +277,8 @@ def render_acceptance_checklist() -> str:
         "(durable approval artifact: docs/release/v1-waiver-approval-2026-06-19.md). The operator "
         "walkthrough demonstrated several component-verified behaviours using prototype runtime code "
         "built live outside governance — recorded as prototype/operator evidence, not reviewed release "
-        "proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 was the first, via "
-        "S16.03).",
+        "proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then "
+        "AT-04 via S16.07).",
         "",
         "| Test | Area | Status | Evidence |",
         "|---|---|---|---|",

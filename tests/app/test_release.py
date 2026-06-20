@@ -39,19 +39,19 @@ def test_status_counts_cover_all_twenty() -> None:
 def test_only_end_to_end_proven_criteria_are_pass() -> None:
     """Only fully-proven ATs are PASS — locks the honest grading after the Codex S15.01 review.
 
-    v1 was accepted (2026-06-19) on five PASS criteria; live-demonstrated items keep
-    COMPONENT_VERIFIED until their runtime code merges under governance (v1.1-P1). AT-13 is the
-    first to harden to PASS: S16.03 wired the credential scrub into the worker subprocess runner,
-    proven by a real-child CI test (tests/workers/test_subprocess_runner.py).
+    v1 was accepted (2026-06-19) on five PASS criteria; v1.1-P1 hardens items to PASS as their
+    governed runtime code lands, each proven by a CI test: AT-13 (credential scrub, S16.03) and
+    AT-04 (durable SqliteSaver checkpointer surviving restart, S16.07).
     """
     passing = {r.test_id for r in ACCEPTANCE_RESULTS if r.status is AcceptanceStatus.PASS}
-    assert passing == {"AT-01", "AT-02", "AT-03", "AT-09", "AT-13", "AT-20"}
+    assert passing == {"AT-01", "AT-02", "AT-03", "AT-04", "AT-09", "AT-13", "AT-20"}
 
 
-def test_v1_accepted_with_five_approved_waivers() -> None:
-    """S15.02 acceptance: exactly five waivers remain, each carrying the founder's approval."""
+def test_remaining_approved_waivers_after_at04_hardened() -> None:
+    """v1 was accepted with five waivers; S16.07 hardened AT-04 (durable checkpointer) to PASS, so
+    four approved waivers remain — each still carrying the founder's approval."""
     waived = [r for r in ACCEPTANCE_RESULTS if r.status is AcceptanceStatus.WAIVED]
-    assert {r.test_id for r in waived} == {"AT-04", "AT-12", "AT-16", "AT-17", "AT-19"}
+    assert {r.test_id for r in waived} == {"AT-12", "AT-16", "AT-17", "AT-19"}
     for result in waived:
         assert result.waiver is not None
         assert "APPROVED" in result.waiver.approval
