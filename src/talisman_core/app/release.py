@@ -133,10 +133,10 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
         "AT-08",
         "Codex CLI worker",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "workers/codex_cli.py implements WorkerPort (unit-tested); Codex CLI ran all 25 "
-        "cross-family reviews this build. A live run THROUGH the adapter needs the corrected "
-        f"invocation (prompt on stdin + --skip-git-repo-check). {_PROTOTYPE} (the one-line "
-        "adapter fix is the first v1.1-P1 slice).",
+        "workers/codex_cli.py implements WorkerPort and now uses the invocation Codex CLI actually "
+        "requires — prompt on stdin + --skip-git-repo-check (S16.05, unit-tested incl. a real-subprocess "
+        "stdin test); Codex CLI also ran the cross-family reviews throughout this build. Flips to PASS on "
+        "a live run through the adapter (real Codex, not exercisable in CI).",
     ),
     AcceptanceResult(
         "AT-09",
