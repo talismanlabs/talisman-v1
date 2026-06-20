@@ -20,10 +20,12 @@ Status legend:
 - WAIVED: the feature/runtime is genuinely not built; deferred to v1.1 with an approved waiver.
 
 Acceptance status: TalisMan v1 is ACCEPTED (2026-06-19; see the approval artifact above). The
-founder approved the five remaining waivers after the operator walkthrough. Acceptance stands on
-the five end-to-end PASS criteria plus the five approved waivers — it does NOT depend on the
-prototype walkthrough demonstrations, which are tracked separately and harden into PASS as the
-v1.1-P1 governed slices land.
+founder approved the five remaining waivers after the operator walkthrough. Acceptance stood on
+five end-to-end PASS criteria (as of 2026-06-19) plus the five approved waivers — it does NOT
+depend on the prototype walkthrough demonstrations, which are tracked separately and harden into
+PASS as the v1.1-P1 governed slices land. v1.1-P1 update: AT-13 (credential isolation) is the
+first to harden to PASS — S16.03 wired the credential scrub into the worker subprocess runner with
+a real-child CI test.
 """
 
 from __future__ import annotations
@@ -172,10 +174,11 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
     AcceptanceResult(
         "AT-13",
         "Credential isolation",
-        AcceptanceStatus.COMPONENT_VERIFIED,
-        "security/credentials.worker_environment scrubs long-lived keys (unit-tested, S10.01) and "
-        f"the scrub was shown in the operator walkthrough. {_PROTOTYPE} (wiring the scrub into the "
-        "worker subprocess runner is a v1.1-P1 slice).",
+        AcceptanceStatus.PASS,
+        "security/credentials.worker_environment is wired (S16.03) as the single, unbypassable spawn "
+        "point in workers/_subprocess.default_runner used by both worker adapters; a CI contract test "
+        "spawns a REAL child process and proves ANTHROPIC_API_KEY / OPENAI_API_KEY / GITHUB_TOKEN are "
+        "absent from the worker environment (D6).",
     ),
     AcceptanceResult(
         "AT-14",
@@ -271,11 +274,12 @@ def render_acceptance_checklist() -> str:
         "(several also shown live in the operator walkthrough as prototype evidence; hardening tracked "
         f"as v1.1-P1) · {counts[AcceptanceStatus.WAIVED]} waived with founder approval.",
         "",
-        "**ACCEPTED 2026-06-19.** Acceptance stands on the five end-to-end PASS criteria plus the five "
-        "founder-approved waivers (durable approval artifact: docs/release/v1-waiver-approval-2026-06-19.md). "
-        "The operator walkthrough demonstrated several component-verified behaviours using prototype "
-        "runtime code built live outside governance — recorded as prototype/operator evidence, not "
-        "reviewed release proof; each flips to PASS as its v1.1-P1 code lands under governance.",
+        "**ACCEPTED 2026-06-19** on five end-to-end PASS criteria plus the five founder-approved waivers "
+        "(durable approval artifact: docs/release/v1-waiver-approval-2026-06-19.md). The operator "
+        "walkthrough demonstrated several component-verified behaviours using prototype runtime code "
+        "built live outside governance — recorded as prototype/operator evidence, not reviewed release "
+        "proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 was the first, via "
+        "S16.03).",
         "",
         "| Test | Area | Status | Evidence |",
         "|---|---|---|---|",

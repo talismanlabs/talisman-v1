@@ -39,11 +39,13 @@ def test_status_counts_cover_all_twenty() -> None:
 def test_only_end_to_end_proven_criteria_are_pass() -> None:
     """Only fully-proven ATs are PASS — locks the honest grading after the Codex S15.01 review.
 
-    S15.02 records the founder's formal acceptance WITHOUT inflating grades: live-demonstrated
-    items keep COMPONENT_VERIFIED until their runtime code merges under governance (v1.1-P1).
+    v1 was accepted (2026-06-19) on five PASS criteria; live-demonstrated items keep
+    COMPONENT_VERIFIED until their runtime code merges under governance (v1.1-P1). AT-13 is the
+    first to harden to PASS: S16.03 wired the credential scrub into the worker subprocess runner,
+    proven by a real-child CI test (tests/workers/test_subprocess_runner.py).
     """
     passing = {r.test_id for r in ACCEPTANCE_RESULTS if r.status is AcceptanceStatus.PASS}
-    assert passing == {"AT-01", "AT-02", "AT-03", "AT-09", "AT-20"}
+    assert passing == {"AT-01", "AT-02", "AT-03", "AT-09", "AT-13", "AT-20"}
 
 
 def test_v1_accepted_with_five_approved_waivers() -> None:

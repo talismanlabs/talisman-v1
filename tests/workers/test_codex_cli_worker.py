@@ -2,7 +2,8 @@
 
 from pathlib import Path
 
-from talisman_core.workers.codex_cli import CodexCliWorker, CommandResult
+from talisman_core.workers._subprocess import CommandResult
+from talisman_core.workers.codex_cli import CodexCliWorker
 
 
 def test_codex_cli_worker_satisfies_worker_contract(worker_request, assert_worker_contract) -> None:

@@ -1,45 +1,17 @@
-"""Claude Code worker adapter (slice S06.01).
+"""Claude Code worker adapter (slice S06.01; shared scrubbing runner wired in S16.03).
 
 Wraps the Claude Code Command Line Interface as a ``WorkerPort``. Vendor-specific
 subprocess logic lives in the workers layer; the orchestrator depends only on the
 typed port. The command runner is injected so the adapter's contract is testable
 without invoking the real CLI (which would spend tokens and require network access).
+The default runner is the shared, credential-scrubbing ``default_runner`` so a worker
+never inherits the orchestrator's long-lived provider keys (D6 / AT-13).
 """
 
 from __future__ import annotations
 
-import subprocess
-from collections.abc import Callable
-from dataclasses import dataclass
-from pathlib import Path
-
 from talisman_core.ports.worker import WorkerRequest, WorkerResult
-
-
-@dataclass(frozen=True)
-class CommandResult:
-    """Outcome of running a worker subprocess: its exit code and captured stdout."""
-
-    exit_code: int
-    stdout: str
-
-
-# A command runner executes a CLI command in a working directory and returns its
-# result. Injected so the adapter can be contract-tested without the real CLI.
-CommandRunner = Callable[[list[str], Path, int], CommandResult]
-
-
-def _default_runner(args: list[str], cwd: Path, timeout_seconds: int) -> CommandResult:
-    """Run a command via ``subprocess`` and capture its exit code and stdout."""
-    completed = subprocess.run(
-        args,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        timeout=timeout_seconds,
-        check=False,
-    )
-    return CommandResult(exit_code=completed.returncode, stdout=completed.stdout)
+from talisman_core.workers._subprocess import CommandRunner, default_runner
 
 
 class ClaudeCodeWorker:
@@ -47,8 +19,8 @@ class ClaudeCodeWorker:
 
     worker_name = "claude_code"
 
-    def __init__(self, runner: CommandRunner = _default_runner) -> None:
-        """Store the injected command runner (defaults to a real subprocess runner)."""
+    def __init__(self, runner: CommandRunner = default_runner) -> None:
+        """Store the injected command runner (defaults to the scrubbing subprocess runner)."""
         self._runner = runner
 
     def run(self, request: WorkerRequest) -> WorkerResult:
