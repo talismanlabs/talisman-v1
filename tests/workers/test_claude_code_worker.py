@@ -2,7 +2,8 @@
 
 from pathlib import Path
 
-from talisman_core.workers.claude_code import ClaudeCodeWorker, CommandResult
+from talisman_core.workers._subprocess import CommandResult
+from talisman_core.workers.claude_code import ClaudeCodeWorker
 
 
 def test_claude_code_worker_satisfies_worker_contract(
