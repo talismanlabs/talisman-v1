@@ -184,10 +184,13 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
         "AT-14",
         "Egress allowlist",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "Default-deny egress policy built + unit-tested incl. bypass classes (security/egress.py). "
-        "A CONNECT proxy calling is_allowed (tunnelling api.anthropic.com, blocking "
-        f"evil-exfiltration.example.com) was shown in the walkthrough. {_PROTOTYPE} (the enforcing "
-        "proxy is a v1.1-P1 slice).",
+        "Default-deny egress policy built + unit-tested incl. bypass classes (security/egress.py). The "
+        "gatekeeper CONNECT proxy — the allowlist DECISION point — is built under governance "
+        "(adapters/egress_proxy.py, ADR-0006, S16.04) and integration-tested: a non-allowlisted CONNECT "
+        "is refused 403 and an allowlisted target tunnels end-to-end. This is necessary but not "
+        "sufficient: env-var routing (HTTPS_PROXY) is cooperative and bypassable, so AT-14 flips to PASS "
+        "only once egress is ENFORCED at the OS level (network namespace / firewall) so a worker cannot "
+        "reach the network except through the proxy — proven by a test that direct egress is blocked.",
     ),
     AcceptanceResult(
         "AT-15",

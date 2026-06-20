@@ -10,24 +10,26 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.03 Wire credential scrub into the worker subprocess runner — review_ready
-  (Claude lead / Codex review). Adds a shared `workers/_subprocess.default_runner` that ALWAYS scrubs the
-  worker environment (`env=worker_environment()`), refactors both adapters onto it (dedup), and adds a
-  real-child CI contract test proving the provider/cloud keys are absent. Flips **AT-13 → PASS** (closes
-  audit finding P0-A).
-- **Last completed slice:** S16.02 Relocate secrets out of the repo working tree (merged, PR #31).
+- **Current slice:** S16.04 Egress gatekeeper proxy (decision point) — review_ready (Claude lead / Codex
+  review). Adds `adapters/egress_proxy.py`, a loopback CONNECT proxy that evaluates `security.egress`
+  (tunnels allowed hosts, refuses others 403, refuses non-CONNECT 501), with real-socket integration
+  tests. Per ADR-0006. This is **part 1** of audit finding P0-B (the allowlist decision point); a real
+  egress boundary also needs **part 2** — OS-level containment (netns/firewall) forcing workers through
+  the proxy — so AT-14 stays component-verified (env-var routing alone is cooperative/bypassable; Codex
+  round-1 blocked the initial over-claim, now reframed).
+- **Last completed slice:** S16.03 Wire credential scrub into the worker subprocess runner (merged, PR #32).
 - **Acceptance picture:** 6 PASS end-to-end (AT-01/02/03/09/13/20 — AT-13 hardened to PASS in S16.03) ·
   9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · 5 waived &
   approved (AT-04/12/16/17/19).
-- **Next work:** continue **v1.1-P1 consolidation** — remaining governed slices: the egress CONNECT proxy
-  (→AT-14), the live Telegram bot incl. token redaction (→AT-05), `main.py --serve` (→AT-18), and the
-  Codex-invocation fix (→AT-08); each reads secrets from `~/talisman/secrets/` and flips a
-  prototype-evidence AT to a true PASS. Then a supervised live-run, then the five approved-waiver features
-  starting with the durable checkpointer (AT-04). (Done: S16.01 supply-chain, S16.02 secrets relocation,
-  S16.03 credential-scrub wiring → AT-13 PASS.)
-- **Current blocker:** awaiting human review + merge of the S16.03 PR.
-- **Next human decision needed:** merge the S16.03 PR; then the next v1.1-P1 slice (egress proxy or live
-  Telegram).
+- **Next work:** continue **v1.1-P1 consolidation** — remaining governed slices: the live Telegram bot
+  incl. token redaction (→AT-05), `main.py --serve` (→AT-18), and the Codex-invocation fix (→AT-08); then
+  add OS-level egress containment (part 2 of P0-B: netns/firewall forcing workers through the proxy, blocking direct egress), wire workers + clients through it, and run a supervised live-run — which
+  flips AT-14 and the routed ATs to PASS. Then the five approved-waiver features starting with the durable
+  checkpointer (AT-04). (Done: S16.01 supply-chain, S16.02 secrets relocation, S16.03 credential-scrub →
+  AT-13 PASS, S16.04 egress proxy decision point built.)
+- **Current blocker:** awaiting human review + merge of the S16.04 PR.
+- **Next human decision needed:** merge the S16.04 PR; then the next v1.1-P1 slice (live Telegram or
+  `--serve`).
 
 ## Build harness status (2026-06-17)
 
@@ -95,7 +97,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-19 | S15.02 | 15 | Claude Code | Codex CLI | accepted | all five pass; 103 tests; FORMAL v1 acceptance. Records founder waiver approval; reconciles app/release to the post-walkthrough truth without inflating grades (AT-05/AT-14 waived→component-verified as prototype evidence; 5 PASS unchanged); commits operator-walkthrough transcript + founder audit package as evidence | `docs/reviews/S15.02.yaml` (**pass/accept** after 2 revise rounds — Codex caught PII in the public-repo transcript + grade inconsistencies; both fixed pre-push) | live-built v1.1 code (bot.py, --serve, egress proxy) uncommitted until P1 lands it | merged (PR #29) |
 | 2026-06-19 | S16.01 | 16 | Claude Code | Codex CLI | accepted | all five pass locally via `uv sync --locked`; gitleaks default full-history scan + PII-config incremental scan both clean locally | `docs/reviews/S16.01.yaml` (pass_with_notes → accept; 2 low notes, no change needed) | supply-chain + review-gate hardening from the 2026-06-19 cross-family audit; PII rules run incrementally to avoid re-flagging redacted history | merged (PR #30) |
 | 2026-06-19 | S16.02 | 16 | Claude Code | Codex CLI | accepted | deterministic checks green (docs/ops only); 5 secret files moved + verified by name+size; in-repo `secrets/` removed | `docs/reviews/S16.02.yaml` (pass; accept) | closes audit P2-①; canonical config already points at `~/talisman/secrets/` so no consumer breaks; dated audit-package snapshot left intact | merged (PR #31) |
-| 2026-06-20 | S16.03 | 16 | Claude Code | Codex CLI | review_ready | all five pass; new real-subprocess contract test spawns a child and proves ANTHROPIC/OPENAI/GITHUB keys absent; both adapters deduped onto the shared scrubbing `default_runner` | `docs/reviews/S16.03.yaml` (pass; accept) | closes audit P0-A; **AT-13 COMPONENT_VERIFIED→PASS** (now 6 PASS / 9 component / 5 waived); checklist regenerated; deduped runner resolves the S07.01 plumbing-duplication finding | request Codex review; open PR; human merge |
+| 2026-06-20 | S16.03 | 16 | Claude Code | Codex CLI | accepted | all five pass; new real-subprocess contract test spawns a child and proves ANTHROPIC/OPENAI/GITHUB keys absent; both adapters deduped onto the shared scrubbing `default_runner` | `docs/reviews/S16.03.yaml` (pass; accept) | closes audit P0-A; **AT-13 COMPONENT_VERIFIED→PASS** (now 6 PASS / 9 component / 5 waived); checklist regenerated; deduped runner resolves the S07.01 plumbing-duplication finding | merged (PR #32) |
+| 2026-06-20 | S16.04 | 16 | Claude Code | Codex CLI | review_ready | all five pass; 3 real-socket integration tests (allowed CONNECT tunnels end-to-end; non-allowlisted → 403 via the real policy; non-CONNECT → 501) | `docs/reviews/S16.04.yaml` (block→pass after revise; round-1 caught the proxy-is-cooperative over-claim) | delivers part 1 (decision point) of P0-B; egress proxy component built per ADR-0006; full closure + AT-14 PASS need OS-level containment (part 2: netns/firewall); Codex round-1 blocked the over-claim, reframed | request Codex review; open PR; human merge |
 
 ## Decision log
 
@@ -115,6 +118,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-19 | Ran a cross-family security audit (Claude + Codex) over the public repo + full history before v1.1 feature work; opened v1.1 with a supply-chain & review-gate hardening slice (S16.01). | Founder wanted assurance that no vulnerabilities or PII were left needlessly exposed in the public repo. Result: **no credentials in the 92-commit history**; the only committed PII is the self-published commit-identity email (already permanent in commit metadata). The three "high" code findings are unwired controls that become reachable only when v1.1-P1 wires the prototypes, so each fix is bound to its wiring slice. | private audit report (kept out of repo); `docs/slice-backlog.md` S16.01; this ledger |
 | 2026-06-19 | Relocated the live `*.secret` files out of the public-repo working tree to the canonical `~/talisman/secrets/` (dir 0700, files 0600); removed the in-repo `secrets/` directory. | Audit finding P2-①: the secrets sat inside the public checkout, protected only by `.gitignore` — one `git add -f`/typo/zip from exposure. The canonical spec already specifies `~/talisman/secrets/`, so no shipped consumer changes; no rotation (nothing was ever exposed). | S16.02; `docs/talisman-v1/talisman-v1-config-templates.md` |
 | 2026-06-20 | Wired the credential scrub into worker execution: a shared `workers/_subprocess.default_runner` always passes `env=worker_environment()`, and a real-child CI test proves the scrubbed provider/cloud keys are absent. AT-13 (credential isolation) hardens COMPONENT_VERIFIED → PASS (first v1.1-P1 grade flip). | Audit finding P0-A: the scrub helper existed but was unwired, so a real worker would inherit the orchestrator's keys. Wiring it at one unbypassable spawn point (also dedups the two adapters) makes the D6 guarantee hold and is provable end-to-end in CI. | S16.03; `tests/workers/test_subprocess_runner.py`; `app/release.py` |
+| 2026-06-20 | Built the egress gatekeeper proxy (the allowlist DECISION point): a loopback CONNECT proxy (`adapters/egress_proxy.py`) that consults `security.egress` and tunnels allowed hosts / refuses others (403) / refuses non-CONNECT (501); proven by real-socket integration tests. Per ADR-0006 — Pat chose the gatekeeper-proxy approach over a per-client check. | Audit finding P0-B: the egress allowlist was advisory (no caller). A single proxy enforces it on BOTH orchestrator and worker-subprocess traffic — a per-client check can't cover worker egress, the real exfil path. A proxy is a cooperative control, so a real boundary needs OS-level containment (netns/firewall) forcing workers through it (part 2, required follow-up); Codex round-1 blocked the "closes P0-B" over-claim and it was reframed. AT-14 stays component-verified; no grade inflated. | `docs/adr/0006-egress-gatekeeper-proxy.md`; S16.04; `tests/adapters/test_egress_proxy.py` |
 
 ## Risk register
 
@@ -133,10 +137,10 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | Worker subprocess plumbing (CommandResult/runner) duplicated across claude_code + codex_cli | low | low | Extract to a shared `talisman_core.workers._subprocess` module (S07.01 review finding). **Resolved in S16.03** — both adapters now use the shared scrubbing `default_runner`; CommandResult/runner live in `workers/_subprocess` | agents | mitigated (S16.03) |
 | `agent_family` (S08.02) does not normalize unknown agent names (case/whitespace) | low | low | Normalize the fallback (`key = agent_name.strip().lower(); return map.get(key, key)`); unreachable today since all real agents are in the known map (S08.02 review finding) | agents | open |
 | Budget breaker (S09.02) has a check-then-record TOCTOU gap under concurrency | low | low | Single-orchestrator v1 is unaffected; if the gateway becomes concurrent, enforce check+record in one transaction or via a serialized writer (S09.02 review open-risk) | agents | open |
-| Egress allowlist (S10.02) is host-granular; squid.conf is domain-granular | low | low | Python layer is the more restrictive (fail-safe); reconcile the two enforcement layers intentionally when wiring the egress proxy (S10.02 review info) | agents | open |
+| Egress allowlist (S10.02) is host-granular; squid.conf is domain-granular | low | low | Python layer is the more restrictive (fail-safe). **Resolved by ADR-0006 / S16.04** — the in-repo CONNECT proxy reuses `security.egress` as the single policy (no squid; one source of truth) | agents | mitigated (S16.04) |
 | Scoped-credential issuance mechanism for workers not built (S10.01) | low | medium | v1 workers self-authenticate; design + build host-side scoped/short-lived credential issuance in v1.1 if/when the orchestrator brain or workers need proxied provider access | Pat / agents | open |
 | systemd kill-and-restart (AT-18) verified only at unit-file level, not in CI | low | low | pytest cannot run `systemd --user`; exercise the real kill-and-restart during operator install and the Phase 15 acceptance run (AT-18) (S13.01 review open-risk) | Pat / agents | open |
 | Live-built v1.1 runtime (Telegram `bot.py`, `--serve`, egress proxy) is gate-clean but uncommitted | medium | medium | Built live during the 2026-06-19 walkthrough outside the slice loop; `main.py --serve` is stashed and `bot.py` is untracked. Land each as a governed v1.1-P1 slice (branch+PR+cross-family review) before building on it; do not let it rot in the working tree | agents | open |
-| Flagship security controls (worker credential scrub, egress allowlist, Telegram token redaction) are built but NOT wired into a live path | high (once wired) | high | Not reachable in shipped v1 (only stub workers run; no live bot is instantiated) — the 2026-06-19 cross-family audit verified reachability. Each fix is a **blocking acceptance criterion** on the v1.1-P1 slice that wires its path, gated by a contract test before the AT may flip to PASS. **cred-scrub→AT-13 DONE (S16.03: wired at one unbypassable spawn point + real-child CI test).** Remaining: egress proxy→AT-14, live-telegram token redaction→AT-05 | agents | in_progress |
+| Flagship security controls (worker credential scrub, egress allowlist, Telegram token redaction) are built but NOT wired into a live path | high (once wired) | high | Not reachable in shipped v1 (only stub workers run; no live bot is instantiated) — the 2026-06-19 cross-family audit verified reachability. Each fix is a **blocking acceptance criterion** on the v1.1-P1 slice that wires its path, gated by a contract test before the AT may flip to PASS. **cred-scrub→AT-13 DONE (S16.03).** **egress proxy DECISION POINT built (S16.04, enforces in integration tests); a proxy is cooperative, so AT-14 flips only when OS-level containment (netns/firewall) forces all worker egress through it (part 2, required follow-up).** Remaining: egress containment (part 2), live-telegram token redaction→AT-05 | agents | in_progress |
 | Supply chain: unpinned CI actions, no committed lockfile, unverified gitleaks binary, PII-blind secret scan | medium | medium | S16.01 commits `uv.lock` + `uv sync --locked`, SHA-pins actions, checksum-verifies the gitleaks binary, and adds a PII-aware incremental gitleaks config | agents | mitigated (S16.01) |
 | `secrets/` lives inside the public-repo working tree (gitignored, never committed) | low | high | Single `git add -f`/typo/zip away from exposing live keys. Relocate to `~/talisman/secrets/` (the documented external location) as the v1.1 step after S16.01; keep `.gitignore` entries as belt-and-suspenders. **Done in S16.02** (moved to `~/talisman/secrets/`; in-repo dir removed) | Pat / agents | mitigated (S16.02) |

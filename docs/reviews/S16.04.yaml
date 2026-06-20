@@ -1,0 +1,33 @@
+slice_id: S16.04
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings: []
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Passed on the third pass after a round-1 BLOCK. Codex correctly caught a security over-claim; it
+    was fixed rather than argued.
+  round_1_fixed:
+    - "R1 (blocker): a proxy is a COOPERATIVE control, not a security boundary — a worker can open a
+      direct socket or unset HTTPS_PROXY and bypass it. Reframed ADR-0006, the ledger, the backlog, and
+      the AT-14 evidence so S16.04 delivers only PART 1 (the allowlist decision point); P0-B closure and
+      the AT-14 flip now explicitly require PART 2 (OS-level containment: network namespace / firewall),
+      proven by a test that direct (non-proxy) egress is blocked. No grade inflated — AT-14 stays
+      COMPONENT_VERIFIED."
+  round_2_fixed:
+    - "R1 (low): tightened the egress_proxy docstring and ADR decision wording so they no longer phrase
+      the orchestrator/worker routing as already in place; it is an OS-level-containment follow-up."
+  note: >
+    The proxy code was unchanged across all three rounds — only the claims were corrected. The honest
+    grade is COMPONENT_VERIFIED until containment is built and tested.
