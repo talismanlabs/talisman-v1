@@ -10,25 +10,25 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.11 Automatic retrospective at project close — review_ready (Claude lead / Codex
-  review). `project_run.generate_retrospective` renders a markdown retro (outcome, phases, gates,
-  artifacts); `run_project` produces it automatically at every project close. Hardens the v1-waived
-  **AT-16 → PASS** (the spec's self-improvement structure).
-- **Last completed slice:** S16.10 `--serve` runtime / the always-on service (merged, PR #39).
-- **Acceptance picture:** 9 PASS end-to-end (AT-01/02/03/04/09/12/13/16/20 — v1.1 hardened AT-13 S16.03, AT-04 S16.07, AT-12 S16.08, AT-16 S16.11) ·
-  9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · 2 waived &
-  approved (AT-17/19).
+- **Current slice:** S16.12 Automatic incident dump on catastrophic halt — review_ready (Claude lead /
+  Codex review). `observability/incident.write_incident_dump` writes a timestamped markdown dump
+  (reason, phases, recent logs); `run_project` triggers it automatically when a run halts
+  catastrophically, before re-raising. Hardens the v1-waived **AT-19 → PASS** (unattended diagnosability).
+- **Last completed slice:** S16.11 Automatic retrospective at project close (merged, PR #40).
+- **Acceptance picture:** 10 PASS end-to-end (AT-01/02/03/04/09/12/13/16/19/20 — v1.1 hardened AT-13 S16.03, AT-04 S16.07, AT-12 S16.08, AT-16 S16.11, AT-19 S16.12) ·
+  9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · 1 waived &
+  approved (AT-17 lessons-retrieval).
 - **Next work:** continue **v1.1-P1 consolidation** — remaining governed slices: the live Telegram bot
   incl. token redaction (→AT-05); then
   wire the orchestrator to run real workers through the **container runner** end-to-end (the wiring that flips AT-14), then run a supervised live-run — which
-  flips AT-14 and the routed ATs to PASS. Then the remaining approved-waiver features (AT-17 lessons-retrieval, AT-19 incident-dump; the durable
+  flips AT-14 and the routed ATs to PASS. Then the remaining approved-waiver feature (AT-17 lessons-retrieval — the last waiver; the durable
   checkpointer AT-04 + gateway-retry AT-12 are now done). (Done: S16.01 supply-chain, S16.02 secrets relocation, S16.03 credential-scrub →
-  AT-13 PASS, S16.04 egress proxy decision point, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable checkpointer → AT-04 PASS, S16.08 gateway retry → AT-12 PASS, S16.09 generic project intake — a greenfield project provably runs the governed spiral, S16.10 --serve runtime, S16.11 retrospective → AT-16 PASS.)
-- **Current blocker:** awaiting human review + merge of the S16.11 PR.
-- **Next human decision needed:** merge the S16.11 PR. The structural goal (run a new project through the
+  AT-13 PASS, S16.04 egress proxy decision point, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable checkpointer → AT-04 PASS, S16.08 gateway retry → AT-12 PASS, S16.09 generic project intake — a greenfield project provably runs the governed spiral, S16.10 --serve runtime, S16.11 retrospective → AT-16 PASS, S16.12 incident dump → AT-19 PASS.)
+- **Current blocker:** awaiting human review + merge of the S16.12 PR.
+- **Next human decision needed:** merge the S16.12 PR. The structural goal (run a new project through the
   governed spiral) + the always-on runtime are now built; the high-value next step is the **live run**
   (real containerized workers + real spend) — a human-authorized gate, plus a deploy box. Remaining
-  autonomous polish: the last 2 waivers (AT-17 lessons-retrieval, AT-19 incident dump) and live Telegram.
+  autonomous polish: the last waiver (AT-17 lessons-retrieval) and live Telegram.
 
 ## Build harness status (2026-06-17)
 
@@ -104,7 +104,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-20 | S16.08 | 16 | Claude Code | Codex CLI | accepted | all five pass; `gateway_client.retrying_transport` — full-jitter backoff retries transport errors + 429/5xx (honors numeric Retry-After), non-retryable 4xx surface immediately; 5 CI tests (retry-then-succeed, no-retry-4xx, Retry-After, exhaustion, jitter-capped; injected sleep/rand) | `docs/reviews/S16.08.yaml` (block→pass after revise; round-1 caught a 5xx-subset + Retry-After truncation) | hardens v1-waived **AT-12 → PASS** (pulled forward for autonomy); now **8 PASS / 9 component / 3 waived**; wired into `over_http` | merged (PR #37) |
 | 2026-06-20 | S16.09 | 16 | Claude Code | Codex CLI | accepted | all five pass; `app/project_run` ProjectSpec + run_project runs any project through the governed spiral; 3 CI tests prove a brand-new greenfield project runs end-to-end with its own gates, a differently-shaped project runs, and a custom approver plugs in | `docs/reviews/S16.09.yaml` (pass; accept) | **structural endpoint of "test a new project"** — agnosticism demonstrated (deterministic; real workers = the human-gated live run); additive, bootstrap unchanged; no grade change (AT-20 already PASS) | merged (PR #38) |
 | 2026-06-20 | S16.10 | 16 | Claude Code | Codex CLI | accepted | all five pass; `main.py --serve` runtime landed (was stashed) — `_ServiceRunner` signal-driven heartbeat loop, 3 CI tests (arg parser, start/beat/stop on signal, main dispatch); no real workers/spend | `docs/reviews/S16.10.yaml` (block→pass after revise; round-1 caught the systemd unit not launching --serve) | the always-on service systemd keeps alive (AT-18); AT-18 evidence updated but stays component-verified (live kill→restart needs real systemd, operator-verified not CI); no inflation | merged (PR #39) |
-| 2026-06-20 | S16.11 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `project_run.generate_retrospective` renders a markdown retro at every project close (`ProjectRunResult.retrospective`); CI test asserts the retro records project id / outcome / phases / gate | `docs/reviews/S16.11.yaml` (pass_with_notes → accept; stale waiver-count line fixed in-slice) | hardens v1-waived **AT-16 → PASS** (spec self-improvement structure); now **9 PASS / 9 component / 2 waived**; built on S16.09 run_project | request Codex review; open PR; human merge |
+| 2026-06-20 | S16.11 | 16 | Claude Code | Codex CLI | accepted | all five pass; `project_run.generate_retrospective` renders a markdown retro at every project close (`ProjectRunResult.retrospective`); CI test asserts the retro records project id / outcome / phases / gate | `docs/reviews/S16.11.yaml` (pass_with_notes → accept; stale waiver-count line fixed in-slice) | hardens v1-waived **AT-16 → PASS** (spec self-improvement structure); now **9 PASS / 9 component / 2 waived**; built on S16.09 run_project | merged (PR #40) |
+| 2026-06-20 | S16.12 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `observability/incident.write_incident_dump` writes a timestamped markdown dump (reason / phases / recent logs); `run_project` triggers it automatically on catastrophic halt before re-raising; CI test injects a throwing handler → dump written + error propagates | `docs/reviews/S16.12.yaml` (block→pass after revise; round-1 security check caught raw secrets in the dump + a path-unsafe filename) | hardens v1-waived **AT-19 → PASS** (unattended diagnosability); now **10 PASS / 9 component / 1 waived** — only AT-17 lessons-retrieval remains; secrets redacted at the write point + path-safe filenames | request Codex review; open PR; human merge |
 
 ## Decision log
 

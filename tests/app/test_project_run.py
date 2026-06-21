@@ -6,6 +6,8 @@ end to end through the governed spiral, with its own phases and gates, determini
 
 from __future__ import annotations
 
+import pytest
+
 from talisman_core.app.project_run import ProjectRunResult, ProjectSpec, run_project
 from talisman_core.ports.approval import ApprovalDecision, ApprovalRequest
 
@@ -68,3 +70,71 @@ def test_a_project_close_produces_a_retrospective() -> None:
     assert "Outcome: completed" in retro
     assert "interview, plan, review" in retro  # the phases it completed
     assert "retro-demo:plan" in retro  # the gate that fired
+
+
+def test_a_catastrophic_halt_writes_an_incident_dump(tmp_path) -> None:
+    """An unhandled error during a run writes an incident dump, then propagates (AT-19)."""
+
+    def boom(_state: object) -> str:
+        raise RuntimeError("planner exploded")
+
+    spec = ProjectSpec("doomed", ("plan",))
+
+    with pytest.raises(RuntimeError, match="planner exploded"):
+        run_project(spec, handlers={"plan": boom}, incident_dir=tmp_path)
+
+    dumps = list(tmp_path.glob("incident-doomed-*.md"))
+    assert len(dumps) == 1
+    body = dumps[0].read_text(encoding="utf-8")
+    assert "# Incident dump — doomed" in body
+    assert "planner exploded" in body  # the reason
+    assert "Phases: plan" in body
+
+
+def test_incident_dump_redacts_secrets(tmp_path, monkeypatch) -> None:
+    """Secrets that leak into the error/logs are redacted from the dump (AT-19, security)."""
+    env_secret = "not-a-real-secret-just-a-test-value"  # redacted via the live env-var value
+    monkeypatch.setenv("OPENAI_API_KEY", env_secret)
+    token = "sk-DEMOabcdefghij1234567890"  # redacted via the secret-shaped pattern
+
+    def boom(_state: object) -> str:
+        raise RuntimeError(f"auth failed: env={env_secret} token={token}")
+
+    spec = ProjectSpec("leaky", ("plan",))
+    with pytest.raises(RuntimeError):
+        run_project(spec, handlers={"plan": boom}, incident_dir=tmp_path)
+
+    body = next(tmp_path.glob("incident-leaky-*.md")).read_text(encoding="utf-8")
+    assert env_secret not in body  # redacted via the live env-var value
+    assert token not in body  # redacted via the secret-shaped pattern
+    assert "[REDACTED]" in body
+
+
+def test_incident_dump_filename_is_path_safe(tmp_path) -> None:
+    """A project id with path separators cannot traverse outside the dump directory (AT-19)."""
+
+    def boom(_state: object) -> str:
+        raise RuntimeError("boom")
+
+    spec = ProjectSpec("../../etc/evil", ("plan",))
+    with pytest.raises(RuntimeError):
+        run_project(spec, handlers={"plan": boom}, incident_dir=tmp_path)
+
+    dumps = list(tmp_path.glob("incident-*.md"))
+    assert len(dumps) == 1
+    assert dumps[0].parent == tmp_path  # written inside the dir, not traversed out
+    assert "../../etc/evil" in dumps[0].read_text(encoding="utf-8")  # real id kept in the body
+
+
+def test_repeated_incidents_do_not_overwrite(tmp_path) -> None:
+    """Successive incidents for the same project get distinct files (AT-19)."""
+
+    def boom(_state: object) -> str:
+        raise RuntimeError("boom")
+
+    spec = ProjectSpec("dup", ("plan",))
+    for _ in range(2):
+        with pytest.raises(RuntimeError):
+            run_project(spec, handlers={"plan": boom}, incident_dir=tmp_path)
+
+    assert len(list(tmp_path.glob("incident-dup-*.md"))) == 2

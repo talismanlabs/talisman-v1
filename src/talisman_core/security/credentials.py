@@ -10,6 +10,7 @@ own providers through their own credentials, not the orchestrator's long-lived k
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Iterable, Mapping
 
 # Long-lived secret environment variables stripped from any worker environment,
@@ -37,3 +38,36 @@ def worker_environment(secret_names: Iterable[str] = DEFAULT_SCRUBBED_VARS) -> d
     with long-lived provider and cloud secrets stripped out.
     """
     return scrub_environment(os.environ, secret_names)
+
+
+_REDACTED = "[REDACTED]"
+
+# Common secret-shaped tokens, redacted defensively on top of literal env-value redaction.
+_SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"sk-[A-Za-z0-9_-]{16,}"),  # OpenAI / Anthropic-style API keys
+    re.compile(r"gh[posru]_[A-Za-z0-9]{20,}"),  # GitHub tokens
+    re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS access key ids
+)
+
+
+def current_secret_values(secret_names: Iterable[str] = DEFAULT_SCRUBBED_VARS) -> tuple[str, ...]:
+    """The live values of the scrubbed-secret environment variables, for text redaction."""
+    values = [value for name in secret_names if (value := os.environ.get(name))]
+    return tuple(values)
+
+
+def redact_secrets(text: str, *, secret_values: Iterable[str] = ()) -> str:
+    """Redact secrets from free text before it is persisted or surfaced.
+
+    Removes (a) any provided literal secret VALUES — e.g. the live values of the scrubbed
+    environment variables, via :func:`current_secret_values` — and (b) common secret-shaped
+    token patterns. Used wherever raw text (an exception message, a captured log line) might
+    carry a credential, e.g. the incident dump (S16.12).
+    """
+    redacted = text
+    for value in secret_values:
+        if value:
+            redacted = redacted.replace(value, _REDACTED)
+    for pattern in _SECRET_PATTERNS:
+        redacted = pattern.sub(_REDACTED, redacted)
+    return redacted
