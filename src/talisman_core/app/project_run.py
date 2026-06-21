@@ -22,6 +22,7 @@ from pathlib import Path
 from talisman_core.app.composition import TalismanApp, build_application
 from talisman_core.observability.incident import write_incident_dump
 from talisman_core.ports.approval import ApprovalDecision, ApprovalPort, ApprovalRequest
+from talisman_core.ports.memory import Lesson, LessonQuery, MemoryPort
 from talisman_core.workflow.spiral import PhaseHandler, SpiralState
 
 _DEFAULT_INCIDENT_DIR = Path.home() / "talisman" / "incidents"
@@ -35,6 +36,7 @@ class ProjectSpec:
     phases: tuple[str, ...]
     gate_phases: frozenset[str] = frozenset()
     tier: str = "standard"
+    domain_tags: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,7 @@ class ProjectRunResult:
     final_state: SpiralState
     gates_fired: tuple[str, ...]
     retrospective: str
+    surfaced_lessons: tuple[Lesson, ...]
 
 
 @dataclass
@@ -82,6 +85,22 @@ def generate_retrospective(
     return "\n".join(lines) + "\n"
 
 
+def _surface_lessons_at_intake(
+    spec: ProjectSpec, memory: MemoryPort | None, application: TalismanApp
+) -> tuple[Lesson, ...]:
+    """Retrieve active lessons relevant to the spec and surface them at intake (AT-17)."""
+    if memory is None:
+        return ()
+    lessons = memory.retrieve_lessons(LessonQuery(domain_tags=spec.domain_tags))
+    application.logger.log(
+        "lessons_surfaced",
+        project_id=spec.project_id,
+        count=len(lessons),
+        lesson_ids=[lesson.lesson_id for lesson in lessons],
+    )
+    return lessons
+
+
 def run_project(
     spec: ProjectSpec,
     *,
@@ -89,6 +108,7 @@ def run_project(
     app: TalismanApp | None = None,
     approver: ApprovalPort | None = None,
     incident_dir: Path | None = None,
+    memory: MemoryPort | None = None,
 ) -> ProjectRunResult:
     """Run ``spec`` through the governed spiral and return its final state + gates fired.
 
@@ -96,6 +116,10 @@ def run_project(
     new project can be exercised end to end with no live worker, gateway, or spend. Inject
     ``handlers`` to drive phases through real workers, or ``approver`` to gate through a real
     approval channel.
+
+    If ``memory`` is supplied, the active lessons relevant to the spec's ``domain_tags`` are
+    retrieved and surfaced at intake (logged, and returned on the result) so accumulated
+    lessons inform each new project (AT-17).
 
     If the run halts catastrophically (an unhandled error escapes the spiral), an incident
     dump of the reason + recent logs is written to ``incident_dir`` (default
@@ -108,6 +132,7 @@ def run_project(
         gate_phases=set(spec.gate_phases),
         log_sink=captured_logs.append,
     )
+    surfaced_lessons = _surface_lessons_at_intake(spec, memory, application)
     try:
         final = application.run_gated_project(
             spec.project_id, list(spec.phases), resolved_approver, tier=spec.tier
@@ -126,4 +151,9 @@ def run_project(
         raise
     gates_fired = tuple(getattr(resolved_approver, "seen", ()))
     retrospective = generate_retrospective(spec, final, gates_fired)
-    return ProjectRunResult(final_state=final, gates_fired=gates_fired, retrospective=retrospective)
+    return ProjectRunResult(
+        final_state=final,
+        gates_fired=gates_fired,
+        retrospective=retrospective,
+        surfaced_lessons=surfaced_lessons,
+    )

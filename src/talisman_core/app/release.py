@@ -26,7 +26,8 @@ depend on the prototype walkthrough demonstrations, which are tracked separately
 PASS as the v1.1-P1 governed slices land. v1.1-P1 hardenings so far: AT-13 (credential isolation,
 S16.03, real-child CI test), AT-04 (durable SqliteSaver checkpointer surviving a restart, S16.07), and
 AT-12 (full-jitter gateway retry with Retry-After, S16.08), and AT-16 (automatic retrospective at
-project close, S16.11), and AT-19 (automatic incident dump on catastrophic halt, S16.12).
+project close, S16.11), AT-19 (automatic incident dump on catastrophic halt, S16.12), and AT-17
+(durable lessons surfaced at intake, S16.13) — every v1 waiver now hardened to PASS.
 """
 
 from __future__ import annotations
@@ -207,14 +208,12 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
     AcceptanceResult(
         "AT-17",
         "Lessons retrieval",
-        AcceptanceStatus.WAIVED,
-        "Lessons retrieval/surfacing at intake not implemented (S14.03 deferred).",
-        Waiver(
-            "Lessons retrieval was not built in v1.",
-            "Relevant lessons are not surfaced during intake.",
-            "The lessons schema exists; retrieval is in the v1.1 backlog.",
-            _APPROVED,
-        ),
+        AcceptanceStatus.PASS,
+        "adapters/sqlite.SQLiteMemoryStore implements MemoryPort (durable lessons + retrospectives in "
+        "the shared state DB) and run_project retrieves active lessons relevant to the spec's domain_tags "
+        "and surfaces them at intake (logged + returned on the result); CI-tested "
+        "(tests/adapters/test_memory_store.py, tests/app/test_project_run.py). Hardened from its v1 "
+        "waiver in S16.13.",
     ),
     AcceptanceResult(
         "AT-18",
@@ -274,7 +273,7 @@ def render_acceptance_checklist() -> str:
         "walkthrough demonstrated several component-verified behaviours using prototype runtime code "
         "built live outside governance — recorded as prototype/operator evidence, not reviewed release "
         "proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then "
-        "AT-04 via S16.07, AT-12 via S16.08, AT-16 via S16.11, then AT-19 via S16.12).",
+        "AT-04 via S16.07, AT-12 via S16.08, AT-16 via S16.11, AT-19 via S16.12, then AT-17 via S16.13).",
         "",
         "| Test | Area | Status | Evidence |",
         "|---|---|---|---|",

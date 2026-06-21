@@ -6,10 +6,15 @@ end to end through the governed spiral, with its own phases and gates, determini
 
 from __future__ import annotations
 
+from datetime import date
+from pathlib import Path
+
 import pytest
 
+from talisman_core.adapters.sqlite.memory import SQLiteMemoryStore
 from talisman_core.app.project_run import ProjectRunResult, ProjectSpec, run_project
 from talisman_core.ports.approval import ApprovalDecision, ApprovalRequest
+from talisman_core.ports.memory import Lesson, LessonSeverity, LessonStatus
 
 
 def test_runs_a_brand_new_greenfield_project_end_to_end() -> None:
@@ -138,3 +143,32 @@ def test_repeated_incidents_do_not_overwrite(tmp_path) -> None:
             run_project(spec, handlers={"plan": boom}, incident_dir=tmp_path)
 
     assert len(list(tmp_path.glob("incident-dup-*.md"))) == 2
+
+
+def test_relevant_lessons_are_surfaced_at_intake(tmp_path) -> None:
+    """run_project retrieves active lessons relevant to the spec and surfaces them at intake (AT-17)."""
+    store = SQLiteMemoryStore(tmp_path / "state.sqlite3")
+    store.record_lesson(
+        Lesson(
+            lesson_id="L-ci",
+            project_id="past-project",
+            domain_tags=("ci",),
+            severity=LessonSeverity.HIGH,
+            statement="pin the CI actions",
+            detail_ref=Path("docs/lessons/L-ci.md"),
+            status=LessonStatus.ACTIVE,
+            lesson_date=date(2026, 6, 1),
+        )
+    )
+
+    spec = ProjectSpec("new-project", ("plan",), domain_tags=("ci",))
+    result = run_project(spec, memory=store)
+
+    assert [lesson.lesson_id for lesson in result.surfaced_lessons] == ["L-ci"]
+    assert result.final_state["completed_phases"] == ["plan"]  # the run still completes
+
+
+def test_no_memory_surfaces_no_lessons() -> None:
+    """Without a memory store the default path is unchanged: no lessons surfaced."""
+    result = run_project(ProjectSpec("plain", ("plan",)))
+    assert result.surfaced_lessons == ()
