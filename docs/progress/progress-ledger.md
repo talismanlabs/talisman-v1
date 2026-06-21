@@ -10,25 +10,29 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.13 Durable lessons retrieval surfaced at intake — review_ready (Claude lead /
-  Codex review). `adapters/sqlite.SQLiteMemoryStore` implements the full `MemoryPort` (durable lessons +
-  retrospectives); `run_project` surfaces lessons relevant to the spec's `domain_tags` at intake. Hardens
-  the v1-waived **AT-17 → PASS** — the LAST waiver. **Every v1 waiver is now hardened to PASS.**
-- **Last completed slice:** S16.12 Automatic incident dump on catastrophic halt (merged, PR #41).
+- **Current slice:** S16.14 Live containerized-worker wiring (v1.1-P2) — review_ready (Claude lead /
+  Codex review). `app/live_workers.build_containerized_worker` constructs a real Claude/Codex worker
+  whose CommandRunner is the no-egress `ContainerRunner`; CI proves a real worker command is wrapped in
+  the isolating `podman run` (no container launched, no spend). First slice of the human-gated live path.
+- **Last completed slice:** S16.13 Durable lessons retrieval / every v1 waiver hardened (merged, PR #42).
 - **Acceptance picture:** 11 PASS end-to-end (AT-01/02/03/04/09/12/13/16/17/19/20 — v1.1 hardened AT-13 S16.03, AT-04 S16.07, AT-12 S16.08, AT-16 S16.11, AT-19 S16.12, AT-17 S16.13) ·
   9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · **0 waived —
   every v1 waiver hardened to PASS.**
 - **Next work:** the **autonomous waiver-burndown is COMPLETE** — every v1 waiver hardened to PASS, and
-  the loop is paused at the founder's request. What remains is the **HUMAN-GATED live-execution path**:
-  wire the orchestrator to run real workers through the **container runner** end-to-end (flips AT-14),
-  live Telegram (→AT-05), then a supervised live-run — each needs Pat (real spend / a deploy box).
+  the loop is paused at the founder's request. Now on the **HUMAN-GATED live-execution path** (Pat:
+  "build the wiring now", deploy to a cheap cloud VM): **S16.14 makes real workers constructible inside
+  the container (DONE)**; next = wire the orchestrator to RUN them end-to-end (flips AT-14; the per-phase
+  prompt logic may need an ADR/halt), live Telegram (→AT-05), a turnkey deploy script — then a supervised
+  live-run, which itself needs Pat (real spend / the box).
   (Done this session: S16.01 supply-chain, S16.02 secrets relocation, S16.03 credential-scrub → AT-13,
   S16.04 egress proxy, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable
   checkpointer → AT-04, S16.08 gateway retry → AT-12, S16.09 generic project intake, S16.10 --serve
   runtime, S16.11 retrospective → AT-16, S16.12 incident dump → AT-19, S16.13 lessons retrieval → AT-17.)
-- **Current blocker:** awaiting human review + merge of the S16.13 PR (the final v1.1-P1 waiver slice).
-- **Next human decision needed:** merge the S16.13 PR. With every v1 waiver now hardened to PASS, the
-  autonomous loop is paused (founder's request); the high-value next step is the **live run**
+- **Current blocker:** awaiting human review + merge of the S16.14 PR (first v1.1-P2 live-execution slice).
+- **Next human decision needed:** merge the S16.14 PR. Every v1 waiver is hardened to PASS; the founder
+  chose to build the **live-execution wiring** toward running TalisMan autonomously on real projects. The
+  remaining gates are still the founder's: the deploy box, real credentials + a budget cap, and the
+  high-value step — the supervised **live run**
   (real containerized workers + real spend) — a human-authorized gate, plus a deploy box. No autonomous
   polish remains: every v1 waiver is hardened to PASS, so the loop is paused per the founder's request.
 
@@ -108,7 +112,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-20 | S16.10 | 16 | Claude Code | Codex CLI | accepted | all five pass; `main.py --serve` runtime landed (was stashed) — `_ServiceRunner` signal-driven heartbeat loop, 3 CI tests (arg parser, start/beat/stop on signal, main dispatch); no real workers/spend | `docs/reviews/S16.10.yaml` (block→pass after revise; round-1 caught the systemd unit not launching --serve) | the always-on service systemd keeps alive (AT-18); AT-18 evidence updated but stays component-verified (live kill→restart needs real systemd, operator-verified not CI); no inflation | merged (PR #39) |
 | 2026-06-20 | S16.11 | 16 | Claude Code | Codex CLI | accepted | all five pass; `project_run.generate_retrospective` renders a markdown retro at every project close (`ProjectRunResult.retrospective`); CI test asserts the retro records project id / outcome / phases / gate | `docs/reviews/S16.11.yaml` (pass_with_notes → accept; stale waiver-count line fixed in-slice) | hardens v1-waived **AT-16 → PASS** (spec self-improvement structure); now **9 PASS / 9 component / 2 waived**; built on S16.09 run_project | merged (PR #40) |
 | 2026-06-20 | S16.12 | 16 | Claude Code | Codex CLI | accepted | all five pass; `observability/incident.write_incident_dump` writes a timestamped markdown dump (reason / phases / recent logs); `run_project` triggers it automatically on catastrophic halt before re-raising; CI test injects a throwing handler → dump written + error propagates | `docs/reviews/S16.12.yaml` (block→pass after revise; round-1 security check caught raw secrets in the dump + a path-unsafe filename) | hardens v1-waived **AT-19 → PASS** (unattended diagnosability); now **10 PASS / 9 component / 1 waived** — only AT-17 lessons-retrieval remains; secrets redacted at the write point + path-safe filenames | merged (PR #41) |
-| 2026-06-20 | S16.13 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `adapters/sqlite.SQLiteMemoryStore` implements full `MemoryPort` (durable lessons + retrospectives; + retrospectives table); `run_project` surfaces domain-relevant active lessons at intake (`ProjectRunResult.surfaced_lessons`); CI: store roundtrip / filter / idempotent / retro + intake surfacing | `docs/reviews/S16.13.yaml` (pass_with_notes → accept; stale autonomous-polish line fixed in-slice) | hardens v1-waived **AT-17 → PASS** — the LAST waiver; now **11 PASS / 9 component / 0 waived — every v1 waiver hardened** | request Codex review; open PR; human merge |
+| 2026-06-20 | S16.13 | 16 | Claude Code | Codex CLI | accepted | all five pass; `adapters/sqlite.SQLiteMemoryStore` implements full `MemoryPort` (durable lessons + retrospectives; + retrospectives table); `run_project` surfaces domain-relevant active lessons at intake (`ProjectRunResult.surfaced_lessons`); CI: store roundtrip / filter / idempotent / retro + intake surfacing | `docs/reviews/S16.13.yaml` (pass_with_notes → accept; stale autonomous-polish line fixed in-slice) | hardens v1-waived **AT-17 → PASS** — the LAST waiver; now **11 PASS / 9 component / 0 waived — every v1 waiver hardened** | merged (PR #42) |
+| 2026-06-21 | S16.14 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `app/live_workers.build_containerized_worker` constructs a real Claude/Codex worker whose CommandRunner is the no-egress ContainerRunner; 2 CI tests prove a real worker command is wrapped in the isolating podman run (internal net + proxy only, no provider keys) via a capturing host-runner — no container launched, no spend | `docs/reviews/S16.14.yaml` (pass_with_notes → pass; added explicit no-provider-key assertions per the note) | first **v1.1-P2 live-execution** slice; foundation for the live run; no grade change (AT-14 stays component-verified until the orchestrator runs workers end-to-end + the supervised live run) | request Codex review; open PR; human merge |
 
 ## Decision log
 
