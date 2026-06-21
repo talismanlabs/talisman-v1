@@ -38,6 +38,14 @@ CREATE TABLE IF NOT EXISTS lesson_audit (
     FOREIGN KEY (lesson_id) REFERENCES lessons(lesson_id)
 );
 
+CREATE TABLE IF NOT EXISTS retrospectives (
+    project_id TEXT PRIMARY KEY,
+    content TEXT NOT NULL,
+    lesson_ids TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS gate_events (
     event_id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id TEXT NOT NULL,
