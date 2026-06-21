@@ -14,12 +14,17 @@ the live run, which remains a human-authorized step.
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from talisman_core.app.composition import TalismanApp, build_application
+from talisman_core.observability.incident import write_incident_dump
 from talisman_core.ports.approval import ApprovalDecision, ApprovalPort, ApprovalRequest
 from talisman_core.workflow.spiral import PhaseHandler, SpiralState
+
+_DEFAULT_INCIDENT_DIR = Path.home() / "talisman" / "incidents"
 
 
 @dataclass(frozen=True)
@@ -83,6 +88,7 @@ def run_project(
     handlers: Mapping[str, PhaseHandler] | None = None,
     app: TalismanApp | None = None,
     approver: ApprovalPort | None = None,
+    incident_dir: Path | None = None,
 ) -> ProjectRunResult:
     """Run ``spec`` through the governed spiral and return its final state + gates fired.
 
@@ -90,16 +96,34 @@ def run_project(
     new project can be exercised end to end with no live worker, gateway, or spend. Inject
     ``handlers`` to drive phases through real workers, or ``approver`` to gate through a real
     approval channel.
+
+    If the run halts catastrophically (an unhandled error escapes the spiral), an incident
+    dump of the reason + recent logs is written to ``incident_dir`` (default
+    ``~/talisman/incidents``) before the error re-raises (AT-19).
     """
     resolved_approver: ApprovalPort = approver if approver is not None else _ApproveAllApprover()
+    captured_logs: list[str] = []
     application = app or build_application(
         handlers=handlers,
         gate_phases=set(spec.gate_phases),
-        log_sink=lambda _line: None,
+        log_sink=captured_logs.append,
     )
-    final = application.run_gated_project(
-        spec.project_id, list(spec.phases), resolved_approver, tier=spec.tier
-    )
+    try:
+        final = application.run_gated_project(
+            spec.project_id, list(spec.phases), resolved_approver, tier=spec.tier
+        )
+    except Exception as exc:
+        target = incident_dir if incident_dir is not None else _DEFAULT_INCIDENT_DIR
+        # Best-effort: a dump failure must never mask the original catastrophic error.
+        with contextlib.suppress(Exception):
+            write_incident_dump(
+                target,
+                project_id=spec.project_id,
+                phases=spec.phases,
+                reason=repr(exc),
+                logs=captured_logs,
+            )
+        raise
     gates_fired = tuple(getattr(resolved_approver, "seen", ()))
     retrospective = generate_retrospective(spec, final, gates_fired)
     return ProjectRunResult(final_state=final, gates_fired=gates_fired, retrospective=retrospective)

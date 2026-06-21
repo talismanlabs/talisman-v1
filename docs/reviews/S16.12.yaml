@@ -1,0 +1,36 @@
+slice_id: S16.12
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass
+risk_level: low
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No defects found. The slice meets its acceptance criteria: incident dumps are written on catastrophic run failure before re-raising, dump failures are best-effort and do not mask the original error, reason and recent log lines are redacted at the write point, filenames are path-safe and collision-resistant, repeated incidents do not overwrite, AT-19 is moved to PASS, and waiver counts are updated without unrelated grade inflation."
+    required_fix: "None."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Passed on the second pass after a round-1 BLOCK with a failed security check. Codex caught that the
+    dump claimed "no secrets" without enforcing it; fixed with real redaction at the write point.
+  round_1_fixed:
+    - "R1 (blocker, security): the dump wrote raw exception reprs + raw log lines, so a leaked token could
+      be persisted verbatim. Added security.credentials.redact_secrets (live env-var values + secret-shaped
+      patterns) applied to the reason and every log line at the unbypassable write point; added a test
+      injecting both an env-value secret and a token pattern and proving both are absent from the dump."
+    - "R2 (medium): the filename used the raw project id (path-traversal + same-second overwrite). Now a
+      filesystem-safe slug + timestamp + random suffix; the real id stays only in the body. Added
+      path-separator and repeated-dump tests."
+    - "R3 (low): fixed a second stale ledger waiver-count line."
+  note: >
+    The dump is also best-effort now (contextlib.suppress) so a dump failure can never mask the original
+    catastrophic error. AT-19 PASS matches the implemented, tested behavior.

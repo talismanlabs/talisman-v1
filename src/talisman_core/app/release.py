@@ -26,7 +26,7 @@ depend on the prototype walkthrough demonstrations, which are tracked separately
 PASS as the v1.1-P1 governed slices land. v1.1-P1 hardenings so far: AT-13 (credential isolation,
 S16.03, real-child CI test), AT-04 (durable SqliteSaver checkpointer surviving a restart, S16.07), and
 AT-12 (full-jitter gateway retry with Retry-After, S16.08), and AT-16 (automatic retrospective at
-project close, S16.11).
+project close, S16.11), and AT-19 (automatic incident dump on catastrophic halt, S16.12).
 """
 
 from __future__ import annotations
@@ -229,14 +229,12 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
     AcceptanceResult(
         "AT-19",
         "Incident dump",
-        AcceptanceStatus.WAIVED,
-        "Automated catastrophic-halt state dump not implemented.",
-        Waiver(
-            "Automated incident-dump trigger was not built in v1.",
-            "No automatic state+log dump on catastrophic halt.",
-            "The operational runbook documents a manual incident-dump procedure; automation in v1.1.",
-            _APPROVED,
-        ),
+        AcceptanceStatus.PASS,
+        "observability/incident.write_incident_dump writes a timestamped, secret-redacted markdown dump "
+        "(reason + recent log lines stripped via redact_secrets; filesystem-safe filename) and "
+        "run_project triggers it (best-effort) automatically when a run halts "
+        "catastrophically — an unhandled error escaping the spiral — before re-raising; CI-tested "
+        "(tests/app/test_project_run.py). Hardened from its v1 waiver in S16.12.",
     ),
     AcceptanceResult(
         "AT-20",
@@ -276,7 +274,7 @@ def render_acceptance_checklist() -> str:
         "walkthrough demonstrated several component-verified behaviours using prototype runtime code "
         "built live outside governance — recorded as prototype/operator evidence, not reviewed release "
         "proof; each flips to PASS as its v1.1-P1 code lands under governance (AT-13 via S16.03, then "
-        "AT-04 via S16.07, AT-12 via S16.08, then AT-16 via S16.11).",
+        "AT-04 via S16.07, AT-12 via S16.08, AT-16 via S16.11, then AT-19 via S16.12).",
         "",
         "| Test | Area | Status | Evidence |",
         "|---|---|---|---|",
