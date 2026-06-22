@@ -10,11 +10,11 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.15 Phase-prompt policy + artifact flow (ADR-0008) — review_ready (Claude lead /
-  Codex review). `policies/phase_prompts.build_phase_prompt` turns a phase + goal + prior artifacts into a
-  worker instruction (9 full_spiral templates; bounded newest-first context; implementation = branch+commit
-  only). Resolves the under-specified phase→prompt logic per founder-approved ADR-0008.
-- **Last completed slice:** S16.14 Live containerized-worker wiring (merged, PR #43).
+- **Current slice:** S16.16 Live project entrypoint — review_ready (Claude lead / Codex review).
+  `app/live_run.run_live_project(spec, worker, workspace)` drives the full spiral on real workers: each
+  phase builds its prompt → runs the worker → records the output as the artifact feeding the next phase.
+  A fake-worker unit test proves the 9-phase run end to end (no container, no spend); running it live is Pat's gate.
+- **Last completed slice:** S16.15 Phase-prompt policy + artifact flow / ADR-0008 (merged, PR #44).
 - **Acceptance picture:** 11 PASS end-to-end (AT-01/02/03/04/09/12/13/16/17/19/20 — v1.1 hardened AT-13 S16.03, AT-04 S16.07, AT-12 S16.08, AT-16 S16.11, AT-19 S16.12, AT-17 S16.13) ·
   9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · **0 waived —
   every v1 waiver hardened to PASS.**
@@ -30,8 +30,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   S16.04 egress proxy, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable
   checkpointer → AT-04, S16.08 gateway retry → AT-12, S16.09 generic project intake, S16.10 --serve
   runtime, S16.11 retrospective → AT-16, S16.12 incident dump → AT-19, S16.13 lessons retrieval → AT-17.)
-- **Current blocker:** awaiting human review + merge of the S16.15 PR (ADR-0008 + phase-prompt policy).
-- **Next human decision needed:** merge the S16.15 PR. Every v1 waiver is hardened to PASS; the founder
+- **Current blocker:** awaiting human review + merge of the S16.16 PR (live project entrypoint).
+- **Next human decision needed:** merge the S16.16 PR. Every v1 waiver is hardened to PASS; the founder
   chose to build the **live-execution wiring** toward running TalisMan autonomously on real projects. The
   remaining gates are still the founder's: the deploy box, real credentials + a budget cap, and the
   high-value step — the supervised **live run**
@@ -116,7 +116,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-20 | S16.12 | 16 | Claude Code | Codex CLI | accepted | all five pass; `observability/incident.write_incident_dump` writes a timestamped markdown dump (reason / phases / recent logs); `run_project` triggers it automatically on catastrophic halt before re-raising; CI test injects a throwing handler → dump written + error propagates | `docs/reviews/S16.12.yaml` (block→pass after revise; round-1 security check caught raw secrets in the dump + a path-unsafe filename) | hardens v1-waived **AT-19 → PASS** (unattended diagnosability); now **10 PASS / 9 component / 1 waived** — only AT-17 lessons-retrieval remains; secrets redacted at the write point + path-safe filenames | merged (PR #41) |
 | 2026-06-20 | S16.13 | 16 | Claude Code | Codex CLI | accepted | all five pass; `adapters/sqlite.SQLiteMemoryStore` implements full `MemoryPort` (durable lessons + retrospectives; + retrospectives table); `run_project` surfaces domain-relevant active lessons at intake (`ProjectRunResult.surfaced_lessons`); CI: store roundtrip / filter / idempotent / retro + intake surfacing | `docs/reviews/S16.13.yaml` (pass_with_notes → accept; stale autonomous-polish line fixed in-slice) | hardens v1-waived **AT-17 → PASS** — the LAST waiver; now **11 PASS / 9 component / 0 waived — every v1 waiver hardened** | merged (PR #42) |
 | 2026-06-21 | S16.14 | 16 | Claude Code | Codex CLI | accepted | all five pass; `app/live_workers.build_containerized_worker` constructs a real Claude/Codex worker whose CommandRunner is the no-egress ContainerRunner; 2 CI tests prove a real worker command is wrapped in the isolating podman run (internal net + proxy only, no provider keys) via a capturing host-runner — no container launched, no spend | `docs/reviews/S16.14.yaml` (pass_with_notes → pass; added explicit no-provider-key assertions per the note) | first **v1.1-P2 live-execution** slice; foundation for the live run; no grade change (AT-14 stays component-verified until the orchestrator runs workers end-to-end + the supervised live run) | merged (PR #43) |
-| 2026-06-21 | S16.15 | 16 | Claude Code | Codex CLI | review_ready | all five pass; **ADR-0008 accepted** (founder A/B/C + first project = a simple Google News replica); `policies/phase_prompts.build_phase_prompt` — 9 full_spiral phase templates, bounded newest-first prior context, implementation = branch+commit only; 5 CI tests; pure policy (no infra) | `docs/reviews/S16.15.yaml` (block→pass after revise; round-1 security check caught a prompt-injection gap in the untrusted context) | resolves the under-specified phase→prompt logic per ADR-0008; no grade change; sets up the live entrypoint | request Codex review; open PR; human merge |
+| 2026-06-21 | S16.15 | 16 | Claude Code | Codex CLI | accepted | all five pass; **ADR-0008 accepted** (founder A/B/C + first project = a simple Google News replica); `policies/phase_prompts.build_phase_prompt` — 9 full_spiral phase templates, bounded newest-first prior context, implementation = branch+commit only; 5 CI tests; pure policy (no infra) | `docs/reviews/S16.15.yaml` (block→pass after revise; round-1 security check caught a prompt-injection gap in the untrusted context) | resolves the under-specified phase→prompt logic per ADR-0008; no grade change; sets up the live entrypoint | merged (PR #44) |
+| 2026-06-22 | S16.16 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `app/live_run.run_live_project` drives the full 9-phase spiral on real workers (each phase: build_phase_prompt → worker.run → output as the artifact feeding the next); `ProjectSpec.goal`; 3 CI unit tests with a fake worker prove the run end-to-end + artifact flow + the implementation constraint survives; no container, no spend | `docs/reviews/S16.16.yaml` (pass_with_notes → accept; stale next-decision line fixed in-slice) | the live entrypoint; no grade change (executing = the human-gated live run; AT-14 end-to-end = the podman integration / supervised run) | request Codex review; open PR; human merge |
 
 ## Decision log
 

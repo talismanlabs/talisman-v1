@@ -37,6 +37,7 @@ class ProjectSpec:
     gate_phases: frozenset[str] = frozenset()
     tier: str = "standard"
     domain_tags: tuple[str, ...] = ()
+    goal: str = ""
 
 
 @dataclass(frozen=True)
