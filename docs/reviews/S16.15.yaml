@@ -1,0 +1,33 @@
+slice_id: S16.15
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No defects found. The slice satisfies S16.15: ADR-0008 records the founder decisions, the prompt policy covers all nine spiral phases, prior artifacts are bounded newest-first and fenced as untrusted data, implementation constraints are restated after context, unknown phases fail closed, and no infrastructure is imported into the policy layer."
+    required_fix: "None."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Passed on the second pass after a round-1 BLOCK (failed security check). Codex caught a
+    prompt-injection gap and two smaller issues; all fixed.
+  round_1_fixed:
+    - "R1 (medium, security): prior artifacts were inserted raw, so a prompt-injected earlier phase could
+      try to override the implementation guardrail (push/merge). Fixed: prior context is now FENCED and
+      labelled as untrusted data (with fence markers neutralised so an artifact cannot break out), and the
+      phase task + non-negotiable constraints are restated AFTER the context as the authoritative last
+      word. Added an injection-regression test proving the constraint follows the injected text."
+    - "R2 (low): the context budget did not count the separator bytes. Fixed: join-then-truncate so the
+      bound includes separators; added a multi-artifact budget test."
+    - "R3 (low): fixed a stale next-human-decision ledger line."
