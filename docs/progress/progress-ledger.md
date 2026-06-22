@@ -10,26 +10,28 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.14 Live containerized-worker wiring (v1.1-P2) — review_ready (Claude lead /
-  Codex review). `app/live_workers.build_containerized_worker` constructs a real Claude/Codex worker
-  whose CommandRunner is the no-egress `ContainerRunner`; CI proves a real worker command is wrapped in
-  the isolating `podman run` (no container launched, no spend). First slice of the human-gated live path.
-- **Last completed slice:** S16.13 Durable lessons retrieval / every v1 waiver hardened (merged, PR #42).
+- **Current slice:** S16.15 Phase-prompt policy + artifact flow (ADR-0008) — review_ready (Claude lead /
+  Codex review). `policies/phase_prompts.build_phase_prompt` turns a phase + goal + prior artifacts into a
+  worker instruction (9 full_spiral templates; bounded newest-first context; implementation = branch+commit
+  only). Resolves the under-specified phase→prompt logic per founder-approved ADR-0008.
+- **Last completed slice:** S16.14 Live containerized-worker wiring (merged, PR #43).
 - **Acceptance picture:** 11 PASS end-to-end (AT-01/02/03/04/09/12/13/16/17/19/20 — v1.1 hardened AT-13 S16.03, AT-04 S16.07, AT-12 S16.08, AT-16 S16.11, AT-19 S16.12, AT-17 S16.13) ·
   9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · **0 waived —
   every v1 waiver hardened to PASS.**
 - **Next work:** the **autonomous waiver-burndown is COMPLETE** — every v1 waiver hardened to PASS, and
   the loop is paused at the founder's request. Now on the **HUMAN-GATED live-execution path** (Pat:
   "build the wiring now", deploy to a cheap cloud VM): **S16.14 makes real workers constructible inside
-  the container (DONE)**; next = wire the orchestrator to RUN them end-to-end (flips AT-14; the per-phase
-  prompt logic may need an ADR/halt), live Telegram (→AT-05), a turnkey deploy script — then a supervised
-  live-run, which itself needs Pat (real spend / the box).
+  the container (DONE)**; the per-phase prompt logic was under-specified → **ADR-0008 accepted** (founder
+  approved A/B/C; first project = a simple Google News replica) and **S16.15 phase-prompt policy DONE**;
+  next = the live entrypoint (wire the policy + containerized workers into run_project for the full spiral,
+  flips AT-14 when run), live Telegram (→AT-05), a turnkey deploy script — then the supervised live-run
+  (real spend / the box — Pat's gate).
   (Done this session: S16.01 supply-chain, S16.02 secrets relocation, S16.03 credential-scrub → AT-13,
   S16.04 egress proxy, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable
   checkpointer → AT-04, S16.08 gateway retry → AT-12, S16.09 generic project intake, S16.10 --serve
   runtime, S16.11 retrospective → AT-16, S16.12 incident dump → AT-19, S16.13 lessons retrieval → AT-17.)
-- **Current blocker:** awaiting human review + merge of the S16.14 PR (first v1.1-P2 live-execution slice).
-- **Next human decision needed:** merge the S16.14 PR. Every v1 waiver is hardened to PASS; the founder
+- **Current blocker:** awaiting human review + merge of the S16.15 PR (ADR-0008 + phase-prompt policy).
+- **Next human decision needed:** merge the S16.15 PR. Every v1 waiver is hardened to PASS; the founder
   chose to build the **live-execution wiring** toward running TalisMan autonomously on real projects. The
   remaining gates are still the founder's: the deploy box, real credentials + a budget cap, and the
   high-value step — the supervised **live run**
@@ -113,7 +115,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-20 | S16.11 | 16 | Claude Code | Codex CLI | accepted | all five pass; `project_run.generate_retrospective` renders a markdown retro at every project close (`ProjectRunResult.retrospective`); CI test asserts the retro records project id / outcome / phases / gate | `docs/reviews/S16.11.yaml` (pass_with_notes → accept; stale waiver-count line fixed in-slice) | hardens v1-waived **AT-16 → PASS** (spec self-improvement structure); now **9 PASS / 9 component / 2 waived**; built on S16.09 run_project | merged (PR #40) |
 | 2026-06-20 | S16.12 | 16 | Claude Code | Codex CLI | accepted | all five pass; `observability/incident.write_incident_dump` writes a timestamped markdown dump (reason / phases / recent logs); `run_project` triggers it automatically on catastrophic halt before re-raising; CI test injects a throwing handler → dump written + error propagates | `docs/reviews/S16.12.yaml` (block→pass after revise; round-1 security check caught raw secrets in the dump + a path-unsafe filename) | hardens v1-waived **AT-19 → PASS** (unattended diagnosability); now **10 PASS / 9 component / 1 waived** — only AT-17 lessons-retrieval remains; secrets redacted at the write point + path-safe filenames | merged (PR #41) |
 | 2026-06-20 | S16.13 | 16 | Claude Code | Codex CLI | accepted | all five pass; `adapters/sqlite.SQLiteMemoryStore` implements full `MemoryPort` (durable lessons + retrospectives; + retrospectives table); `run_project` surfaces domain-relevant active lessons at intake (`ProjectRunResult.surfaced_lessons`); CI: store roundtrip / filter / idempotent / retro + intake surfacing | `docs/reviews/S16.13.yaml` (pass_with_notes → accept; stale autonomous-polish line fixed in-slice) | hardens v1-waived **AT-17 → PASS** — the LAST waiver; now **11 PASS / 9 component / 0 waived — every v1 waiver hardened** | merged (PR #42) |
-| 2026-06-21 | S16.14 | 16 | Claude Code | Codex CLI | review_ready | all five pass; `app/live_workers.build_containerized_worker` constructs a real Claude/Codex worker whose CommandRunner is the no-egress ContainerRunner; 2 CI tests prove a real worker command is wrapped in the isolating podman run (internal net + proxy only, no provider keys) via a capturing host-runner — no container launched, no spend | `docs/reviews/S16.14.yaml` (pass_with_notes → pass; added explicit no-provider-key assertions per the note) | first **v1.1-P2 live-execution** slice; foundation for the live run; no grade change (AT-14 stays component-verified until the orchestrator runs workers end-to-end + the supervised live run) | request Codex review; open PR; human merge |
+| 2026-06-21 | S16.14 | 16 | Claude Code | Codex CLI | accepted | all five pass; `app/live_workers.build_containerized_worker` constructs a real Claude/Codex worker whose CommandRunner is the no-egress ContainerRunner; 2 CI tests prove a real worker command is wrapped in the isolating podman run (internal net + proxy only, no provider keys) via a capturing host-runner — no container launched, no spend | `docs/reviews/S16.14.yaml` (pass_with_notes → pass; added explicit no-provider-key assertions per the note) | first **v1.1-P2 live-execution** slice; foundation for the live run; no grade change (AT-14 stays component-verified until the orchestrator runs workers end-to-end + the supervised live run) | merged (PR #43) |
+| 2026-06-21 | S16.15 | 16 | Claude Code | Codex CLI | review_ready | all five pass; **ADR-0008 accepted** (founder A/B/C + first project = a simple Google News replica); `policies/phase_prompts.build_phase_prompt` — 9 full_spiral phase templates, bounded newest-first prior context, implementation = branch+commit only; 5 CI tests; pure policy (no infra) | `docs/reviews/S16.15.yaml` (block→pass after revise; round-1 security check caught a prompt-injection gap in the untrusted context) | resolves the under-specified phase→prompt logic per ADR-0008; no grade change; sets up the live entrypoint | request Codex review; open PR; human merge |
 
 ## Decision log
 
@@ -135,6 +138,7 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-20 | Wired the credential scrub into worker execution: a shared `workers/_subprocess.default_runner` always passes `env=worker_environment()`, and a real-child CI test proves the scrubbed provider/cloud keys are absent. AT-13 (credential isolation) hardens COMPONENT_VERIFIED → PASS (first v1.1-P1 grade flip). | Audit finding P0-A: the scrub helper existed but was unwired, so a real worker would inherit the orchestrator's keys. Wiring it at one unbypassable spawn point (also dedups the two adapters) makes the D6 guarantee hold and is provable end-to-end in CI. | S16.03; `tests/workers/test_subprocess_runner.py`; `app/release.py` |
 | 2026-06-20 | Built the egress gatekeeper proxy (the allowlist DECISION point): a loopback CONNECT proxy (`adapters/egress_proxy.py`) that consults `security.egress` and tunnels allowed hosts / refuses others (403) / refuses non-CONNECT (501); proven by real-socket integration tests. Per ADR-0006 — Pat chose the gatekeeper-proxy approach over a per-client check. | Audit finding P0-B: the egress allowlist was advisory (no caller). A single proxy enforces it on BOTH orchestrator and worker-subprocess traffic — a per-client check can't cover worker egress, the real exfil path. A proxy is a cooperative control, so a real boundary needs OS-level containment (netns/firewall) forcing workers through it (part 2, required follow-up); Codex round-1 blocked the "closes P0-B" over-claim and it was reframed. AT-14 stays component-verified; no grade inflated. | `docs/adr/0006-egress-gatekeeper-proxy.md`; S16.04; `tests/adapters/test_egress_proxy.py` |
 | 2026-06-20 | Built containerized worker containment (ADR-0007): a worker runs in a rootless-podman container on an `--internal` network whose only off-host route is the egress proxy — empirically verified that such a container gets "Network unreachable" to the internet. The **real** AT-14 boundary (a worker can't bypass what it has no route to), and the foundation for the autonomy-indexed always-on deployment Pat chose. | The proxy alone was cooperative (Codex S16.04). Containerization makes the proxy the worker's ONLY route — kernel-enforced, not cooperative; also reinforces credential + filesystem isolation. AT-14 stays component-verified until the orchestrator runs workers through it end-to-end (wiring follow-up); no grade inflated. | `docs/adr/0007-containerized-worker-containment.md`; S16.06; `tests/workers/test_container_runner.py` |
+| 2026-06-21 | Accepted ADR-0008 (phase-prompt construction + artifact flow): the phase→worker-prompt logic is a pure policy (`policies/phase_prompts`) with per-phase templates + bounded newest-first artifact context; the implementation phase is constrained to a branch+commit (never push/merge); the first real project is a simple Google News replica. | The full_spiral phase sequence + gates are spec'd and portable, but the phase→prompt + artifact-flow logic is specified nowhere (Explore audit) — under-specified per the constitution, so a proposed ADR + halt; the founder approved A/B/C and chose the first project. | `docs/adr/0008-phase-prompt-and-artifact-flow.md`; S16.15 |
 
 ## Risk register
 
