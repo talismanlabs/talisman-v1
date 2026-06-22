@@ -1,0 +1,31 @@
+# TalisMan worker container image (slice S16.18; ADR-0007).
+#
+# The locked-down image that `workers/_container.ContainerRunner` executes a worker inside.
+# It carries the Claude Code + Codex CLIs and git, and runs as a non-root user. At run time
+# the container is attached to an `--internal` podman network whose only off-host route is the
+# egress proxy (ADR-0007), so the worker physically cannot reach the internet except through
+# the proxy — the image itself grants no special access and holds no credentials.
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Base tools + Node.js 20 (Codex is an npm package; workers also need git for branch+commit).
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl git \
+ && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && apt-get install -y --no-install-recommends nodejs \
+ && npm install -g @openai/codex \
+ && apt-get purge -y --auto-remove \
+ && rm -rf /var/lib/apt/lists/*
+
+# Run as an unprivileged user — defence in depth on top of the network containment.
+RUN useradd --create-home --shell /bin/bash worker
+USER worker
+WORKDIR /home/worker
+
+# Claude Code CLI via its native installer (into the worker's ~/.local).
+RUN curl -fsSL https://claude.ai/install.sh | bash
+ENV PATH="/home/worker/.local/bin:${PATH}"
+
+# Build-time sanity check: both CLIs and git must resolve in the image.
+RUN claude --version && codex --version && git --version

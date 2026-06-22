@@ -55,6 +55,11 @@ class ContainerRunner:
             "run",
             "--rm",
             "--init",
+            # Map the host user into the container so the non-root worker can WRITE the
+            # bind-mounted workspace (rootless podman). Without this the worker's container UID
+            # maps to an unprivileged subuid that cannot write host-owned files, so a real
+            # worker's branch-and-commit would fail with permission errors. Verified in S16.18.
+            "--userns=keep-id",
             # Do NOT let podman inject the host's proxy variables (its default is
             # --http-proxy=true): the worker's proxy config must be exactly, and only, what
             # we set below — otherwise host proxy creds could leak in and routing is ambiguous.
