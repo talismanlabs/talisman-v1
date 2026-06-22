@@ -20,19 +20,21 @@ from talisman_core.workers._container import ContainerRunner
 
 
 def test_build_command_isolates_the_worker_invocation(tmp_path: Path) -> None:
-    """The isolation lives in the args: internal network, proxy-only env, workspace-only mount."""
+    """The isolation lives in the args: internal network, exactly our env, workspace-only mount."""
     runner = ContainerRunner(
-        image="talisman/worker:test", network="tm-internal", proxy_url="http://127.0.0.1:8888"
+        image="talisman/worker:test",
+        network="tm-internal",
+        env={"ANTHROPIC_BASE_URL": "http://talisman-gateway:8800", "ANTHROPIC_API_KEY": "ph"},
     )
     command = runner.build_command(["codex", "exec", "--skip-git-repo-check", "-"], tmp_path)
 
     assert command[:4] == ["podman", "run", "--rm", "--init"]
     assert command[command.index("--network") + 1] == "tm-internal"
-    assert "HTTPS_PROXY=http://127.0.0.1:8888" in command
-    assert "HTTP_PROXY=http://127.0.0.1:8888" in command
-    # podman must NOT inherit the host's proxy vars; only our explicit (upper- + lower-case) env.
+    # Exactly the env we passed is set, as --env K=V pairs.
+    assert "ANTHROPIC_BASE_URL=http://talisman-gateway:8800" in command
+    assert "ANTHROPIC_API_KEY=ph" in command
+    # podman must NOT inherit the host's env/proxy vars; only our explicit env.
     assert "--http-proxy=false" in command
-    assert "https_proxy=http://127.0.0.1:8888" in command
     # Map the host user in so the non-root worker can write the bind-mounted workspace (S16.18).
     assert "--userns=keep-id" in command
     assert f"{tmp_path}:{tmp_path}:Z" in command
@@ -47,13 +49,18 @@ def test_build_command_isolates_the_worker_invocation(tmp_path: Path) -> None:
     ]
 
 
-def test_build_command_injects_no_provider_secrets(tmp_path: Path) -> None:
-    """Only the proxy variables are passed; the host's provider keys never enter the container."""
-    runner = ContainerRunner(image="img", network="net", proxy_url="http://127.0.0.1:1")
+def test_build_command_passes_only_the_given_env(tmp_path: Path) -> None:
+    """No env beyond what we pass — the host's real provider keys never enter the container."""
+    runner = ContainerRunner(
+        image="img", network="net", env={"ANTHROPIC_BASE_URL": "http://gw:8800"}
+    )
     command = runner.build_command(["codex"], tmp_path)
 
+    # Only the one var we passed is present; nothing from the host is injected.
+    env_values = [command[i + 1] for i, tok in enumerate(command) if tok == "--env"]
+    assert env_values == ["ANTHROPIC_BASE_URL=http://gw:8800"]
     joined = " ".join(command)
-    for secret in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GITHUB_TOKEN"):
+    for secret in ("AWS_SECRET_ACCESS_KEY", "GITHUB_TOKEN"):
         assert secret not in joined
 
 
@@ -71,7 +78,7 @@ def test_call_delegates_to_the_host_runner(tmp_path: Path) -> None:
         return CommandResult(exit_code=0, stdout="ok")
 
     runner = ContainerRunner(
-        image="img", network="net", proxy_url="http://127.0.0.1:1", host_runner=fake_host_runner
+        image="img", network="net", env={"X": "1"}, host_runner=fake_host_runner
     )
     result = runner(["codex", "exec", "-"], tmp_path, 30, "the prompt")
 
@@ -124,9 +131,7 @@ def internal_network() -> Iterator[str]:
 def test_container_on_internal_network_cannot_egress(internal_network: str, tmp_path: Path) -> None:
     """A real container on the internal network cannot reach the internet — the boundary is
     enforced by the network (a routing failure), not by worker cooperation (ADR-0007 / AT-14)."""
-    runner = ContainerRunner(
-        image="alpine:3.20", network=internal_network, proxy_url="http://unused:1"
-    )
+    runner = ContainerRunner(image="alpine:3.20", network=internal_network, env={})
     # Actively BYPASS the proxy (unset proxy env) and connect direct — proving the block is the
     # network itself, so a worker can't escape by ignoring the proxy. This is the real claim.
     probe = [

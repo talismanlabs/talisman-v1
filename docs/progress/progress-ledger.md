@@ -10,11 +10,12 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   its detailed findings are tracked **privately** (outside this public repo) and drive the v1.1
   hardening sequence below.
 - **Current phase:** Phase 16 — v1.1 supply-chain & consolidation.
-- **Current slice:** S16.20 Credential-injecting gateway / keyless workers (ADR-0010) — review_ready
-  (Claude lead / Codex review). **Best practice (founder: don't cut corners):** the worker holds NO real
-  provider key — an nginx gateway holds the real keys (from mounted secret files) + injects them per
-  provider. Proven LOCALLY end-to-end: a keyless worker (placeholder key) reached real Anthropic THROUGH the gateway (`pong`).
-- **Last completed slice:** S16.19 Egress gateway deployment / ADR-0009 (merged, PR #48).
+- **Current slice:** S16.21 Live-run gateway wiring / keyless workers end-to-end (ADR-0010) —
+  review_ready (Claude lead / Codex review). `ContainerRunner` now takes an explicit env mapping (no host
+  inheritance); `app/live_workers.keyless_gateway_env` builds it: provider base URLs → the gateway +
+  PLACEHOLDER keys, so the orchestrator runs workers holding no real provider secret. Unit-proven on the
+  assembled `podman run`.
+- **Last completed slice:** S16.20 Credential-injecting gateway / ADR-0010 (merged, PR #49).
 - **Acceptance picture:** 11 PASS end-to-end (AT-01/02/03/04/09/12/13/16/17/19/20 — v1.1 hardened AT-13 S16.03, AT-04 S16.07, AT-12 S16.08, AT-16 S16.11, AT-19 S16.12, AT-17 S16.13) ·
   9 component-verified (6 demonstrated live: AT-05/07/08/14/15/18; 3 unit-only: AT-06/10/11) · **0 waived —
   every v1 waiver hardened to PASS.**
@@ -30,14 +31,14 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
   S16.04 egress proxy, S16.05 Codex invocation fix, S16.06 container containment, S16.07 durable
   checkpointer → AT-04, S16.08 gateway retry → AT-12, S16.09 generic project intake, S16.10 --serve
   runtime, S16.11 retrospective → AT-16, S16.12 incident dump → AT-19, S16.13 lessons retrieval → AT-17.)
-- **Current blocker:** awaiting human review + merge of the S16.20 PR (credential gateway / ADR-0010).
-- **Next human decision needed:** merge the S16.20 PR. The deploy box is up (DigitalOcean Ubuntu 24.04,
-  non-root `talisman` user, rootless podman, worker image built on it). The worker-auth question is now
+- **Current blocker:** awaiting human review + merge of the S16.21 PR (live-run gateway wiring / ADR-0010).
+- **Next human decision needed:** merge the S16.21 PR. The deploy box is up (DigitalOcean Ubuntu 24.04,
+  non-root `talisman` user, rootless podman, worker image built on it). The worker-auth question is
   RESOLVED best-practice by **ADR-0010 (keyless workers** — no raw keys in the worker; an nginx gateway
-  injects from host-held, dedicated, spend-capped keys), superseding the ADR-0009 raw-key relaxation.
-  Remaining: wire the worker base-URL env (ContainerRunner) + codify `deploy/setup.sh`; the founder is
-  creating dedicated spend-capped Anthropic + OpenAI keys + a bot token; then the supervised first run on a
-  simple Google News replica. Every v1 waiver is hardened to PASS; the founder
+  injects from host-held, dedicated, spend-capped keys), superseding the ADR-0009 raw-key relaxation. The
+  orchestrator-side wiring is done (S16.21). Remaining: codify `deploy/setup.sh` (the turnkey script), then
+  the founder (who now has dedicated spend-capped Anthropic + OpenAI keys + a bot token) places them on the
+  box and runs the supervised first run on a simple Google News replica. Every v1 waiver is hardened to PASS; the founder
   chose to build the **live-execution wiring** toward running TalisMan autonomously on real projects. The
   founder is provisioning the deploy box (Ubuntu 24.04 cloud VM); the deploy script is written + run against
   it next, then the supervised first live run on a simple Google News replica. The
@@ -129,7 +130,8 @@ Reference templates and immutable architecture artifacts live in `docs/talisman-
 | 2026-06-22 | S16.17 | 16 | Claude Code | Codex CLI | accepted | all five pass; landed `adapters/telegram/bot.py` (transport, was untracked) + `adapters/telegram/approver.TelegramApprover` (ApprovalPort): posts each gate, blocks for an allowlisted APPROVE/REJECT; 7 CI tests (mocked httpx + fake bot, no live token) | `docs/reviews/S16.17.yaml` (block→block→pass; two security blocks — stale-replay / cross-chat / ambiguous-vocab, then token-in-URL leak — all fixed) | the live approval channel (AT-05); AT-05 evidence updated (bot + approver governed) but stays component-verified — the live channel needs a real token (operator-verified) | merged (PR #46) |
 | 2026-06-22 | S16.18 | 16 | Claude Code | Codex CLI | accepted | `deploy/Containerfile.worker` — the locked-down image ContainerRunner runs workers inside (Ubuntu 24.04 + Claude Code + Codex CLIs + git, non-root, no creds) + `deploy/README.md`; built + verified LOCALLY (podman): CLIs resolve (claude 2.1.185, codex 0.141.0), non-root, and on an --internal net the real image can't reach a provider (ADR-0007 holds); CI can't build it (no podman) | `docs/reviews/S16.18.yaml` (block→pass after revise; round-1 caught the non-root mount-write gap) | the foundation for the live run; **+ ContainerRunner --userns=keep-id** so the non-root worker can write the mounted workspace (reproduced + fixed); strengthens AT-14 evidence (real image), stays component-verified | merged (PR #47) |
 | 2026-06-22 | S16.19 | 16 | Claude Code | Codex CLI | accepted | **ADR-0009** egress-gateway topology (dual-homed proxy container) + worker-auth decision; `adapters.egress_proxy` gains serve_forever + a `__main__` (bind 0.0.0.0) so it runs as the proxy container's service; `deploy/README` documents the networks + proxy; bind unit test | `docs/reviews/S16.19.yaml` (block→pass after revise; round-1 caught an inconsistent authority trail for the worker-auth D6 relaxation) | the **real AT-14 boundary**, proven LOCALLY end-to-end (worker → anthropic via proxy ALLOWED 401, example.com DENIED, direct BLOCKED); no grade change (flips at the supervised run) | merged (PR #48) |
-| 2026-06-22 | S16.20 | 16 | Claude Code | Codex CLI | review_ready | **ADR-0010 keyless workers** (best practice; supersedes the ADR-0009 raw-key relaxation): `deploy/gateway/` nginx credential-injecting gateway holds the real keys (mounted secret files), injects per-provider, forwards over verified TLS; `deploy/README` documents it | `docs/reviews/S16.20.yaml` (pass_with_notes → accept; dedicated + spend-capped keys kept as an explicit operator gate) | proven LOCALLY end-to-end: a keyless worker (placeholder key) reached real Anthropic THROUGH the gateway (`pong`) — real key injected, never in the worker; dedicated + capped keys (defense in depth); no Python change | request Codex review; open PR; human merge |
+| 2026-06-22 | S16.20 | 16 | Claude Code | Codex CLI | accepted | **ADR-0010 keyless workers** (best practice; supersedes the ADR-0009 raw-key relaxation): `deploy/gateway/` nginx credential-injecting gateway holds the real keys (mounted secret files), injects per-provider, forwards over verified TLS; `deploy/README` documents it | `docs/reviews/S16.20.yaml` (pass_with_notes → accept; dedicated + spend-capped keys kept as an explicit operator gate) | proven LOCALLY end-to-end: a keyless worker (placeholder key) reached real Anthropic THROUGH the gateway (`pong`) — real key injected, never in the worker; dedicated + capped keys (defense in depth); no Python change | merged (PR #49) |
+| 2026-06-22 | S16.21 | 16 | Claude Code | Codex CLI | review_ready | **live-run wiring (ADR-0010):** `ContainerRunner` takes an explicit `env` mapping (no host inheritance, replacing the single proxy URL); `app/live_workers.keyless_gateway_env` builds it — provider base URLs → the gateway + PLACEHOLDER keys; `LiveWorkerConfig` carries the gateway address | `docs/reviews/S16.21.yaml` (pending) | the orchestrator now runs workers holding NO real provider secret; unit-proven on the assembled `podman run` (gateway base URLs + only the placeholder, no `sk-ant-`/AWS/GitHub key); strengthens AT-14 evidence, stays component-verified (flips at the supervised run) | request Codex review; open PR; human merge |
 
 ## Decision log
 

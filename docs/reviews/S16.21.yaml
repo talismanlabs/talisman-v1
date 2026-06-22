@@ -1,0 +1,25 @@
+slice_id: S16.21
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass_with_notes
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No blocking correctness, architecture-boundary, or security defects found. The code meets S16.21: ContainerRunner now accepts an explicit env mapping, emits only those --env K=V pairs while disabling podman host proxy inheritance, and live_workers builds gateway base URLs plus placeholder Anthropic/OpenAI keys. Tests cover the assembled podman run and check for the placeholder/no real-looking provider/cloud/GitHub secret. Minor documentation drift remains in docs/progress/progress-ledger.md: the current-status summary still says the blocker/next human decision is S16.20, despite S16.20 being marked merged and S16.21 being current."
+    required_fix: "None for acceptance; clean up the stale S16.20 blocker wording in the ledger before using it as the next operator handoff."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Pass — no defects. Fixed the one low note: the ledger's current-blocker / next-decision lines now
+    point at S16.21 (they were stale on S16.20). Security check pass; the keyless wiring is confirmed —
+    the worker carries only a placeholder, the gateway holds the real key.

@@ -23,21 +23,51 @@ from talisman_core.workers.codex_cli import CodexCliWorker
 
 WorkerFamily = Literal["claude", "codex"]
 
+# A worker carries this as its provider API key. It is NOT a secret: the credential gateway
+# (ADR-0010) overrides it with the real key on the way out, so the worker holds no real key.
+# Deliberately a plain non-key string so it reads as a placeholder and never trips a scanner.
+KEYLESS_PLACEHOLDER_KEY = "placeholder-gateway-injects-the-real-key"
+
 
 @dataclass(frozen=True)
 class LiveWorkerConfig:
-    """Container runtime for real workers: the image, the internal network, and the proxy URL."""
+    """Container runtime for real workers: the image, the sealed network, and the gateway address.
+
+    The worker reaches the credential gateway (ADR-0010) by name on the internal network and
+    nothing else; ``gateway_host``/ports locate it. There is no proxy URL — provider traffic goes
+    to the gateway via the base URLs below, and the worker has no other route off-host.
+    """
 
     image: str
     network: str
-    proxy_url: str
+    gateway_host: str = "talisman-gateway"
+    anthropic_port: int = 8800
+    openai_port: int = 8801
+
+
+def keyless_gateway_env(config: LiveWorkerConfig) -> dict[str, str]:
+    """The worker's environment for the keyless credential gateway (ADR-0010).
+
+    Points the Claude/Codex CLIs' provider base URLs at the gateway and sets only PLACEHOLDER
+    keys — the gateway swaps in the real, host-held key. So the container holds no real provider
+    secret: there is nothing for a rogue or prompt-injected worker to read or exfiltrate.
+    """
+    return {
+        "ANTHROPIC_BASE_URL": f"http://{config.gateway_host}:{config.anthropic_port}",
+        "OPENAI_BASE_URL": f"http://{config.gateway_host}:{config.openai_port}",
+        "ANTHROPIC_API_KEY": KEYLESS_PLACEHOLDER_KEY,
+        "OPENAI_API_KEY": KEYLESS_PLACEHOLDER_KEY,
+    }
 
 
 def containerized_runner(
     config: LiveWorkerConfig, *, host_runner: CommandRunner = default_runner
 ) -> ContainerRunner:
-    """Build the ``ContainerRunner`` that isolates a worker command per ADR-0007."""
-    return ContainerRunner(config.image, config.network, config.proxy_url, host_runner=host_runner)
+    """Build the ``ContainerRunner`` that isolates a worker command (ADR-0007) and points it at
+    the keyless credential gateway (ADR-0010)."""
+    return ContainerRunner(
+        config.image, config.network, keyless_gateway_env(config), host_runner=host_runner
+    )
 
 
 def build_containerized_worker(
