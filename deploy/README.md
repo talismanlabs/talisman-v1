@@ -30,6 +30,29 @@ operator-/local-verified, like the other container checks (S16.06):
   (which `ContainerRunner` sets) — without it, rootless podman maps the worker to an unprivileged
   subuid that cannot write host-owned files, so a real branch-and-commit would fail (S16.18).
 
+## Egress gateway (S16.19; ADR-0009)
+
+The boundary that lets a worker reach **only** the allowlisted AI providers — and nothing else.
+Two podman networks + a dual-homed proxy container:
+
+```sh
+# the workers' sealed network (no route off-host) + the proxy's outbound network
+podman network create --internal talisman-internal
+podman network create talisman-egress
+
+# the egress proxy: dual-homed, runs EgressProxy bound to 0.0.0.0:8888, enforcing the
+# security.egress allowlist (api.anthropic.com, api.openai.com, github, package mirrors)
+podman run -d --name talisman-egress-proxy \
+  --network talisman-internal --network talisman-egress \
+  -v /home/talisman/talisman-v1/src:/app/src:ro -e PYTHONPATH=/app/src \
+  python:3.12-slim python -m talisman_core.adapters.egress_proxy --host 0.0.0.0 --port 8888
+```
+
+Workers run on `talisman-internal` **only**, with `HTTPS_PROXY=http://talisman-egress-proxy:8888`
+(the `ContainerRunner`'s `proxy_url`). **Verified locally (S16.19):** a worker reached
+`api.anthropic.com` *only* through the proxy (HTTP 401 over the tunnel), a non-allowlisted host was
+denied, and a direct attempt with no proxy was blocked (no route out).
+
 ## systemd units — `systemd/` (S13.01, S16.10)
 
 The host-side gateway and the orchestrator units. The orchestrator unit launches the

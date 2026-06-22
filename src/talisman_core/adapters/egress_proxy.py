@@ -15,6 +15,7 @@ enforcement mechanism is testable independently of the specific allowlist.
 
 from __future__ import annotations
 
+import argparse
 import socket
 import threading
 from collections.abc import Callable
@@ -164,9 +165,33 @@ class EgressProxy:
             self._thread.join(timeout=5)
             self._thread = None
 
+    def serve_forever(self) -> None:
+        """Serve in the foreground until the process is stopped (standalone-service mode)."""
+        self._server.serve_forever()
+
     def __enter__(self) -> EgressProxy:
         self.start()
         return self
 
     def __exit__(self, *exc: object) -> None:
         self.stop()
+
+
+def _main() -> None:
+    """Run the egress gatekeeper as a standalone service — the deploy proxy container's entrypoint.
+
+    Binds to all interfaces by default because it runs inside the dual-homed proxy container
+    (one foot on the workers' ``--internal`` network, one on the egress network); the
+    containment is the network topology, not the bind address.
+    """
+    parser = argparse.ArgumentParser(prog="talisman-egress-proxy")
+    parser.add_argument(
+        "--host", default="0.0.0.0", help="Bind address (0.0.0.0 inside the proxy container)."
+    )
+    parser.add_argument("--port", type=int, default=8888, help="Bind port.")
+    args = parser.parse_args()
+    EgressProxy(host=args.host, port=args.port).serve_forever()
+
+
+if __name__ == "__main__":
+    _main()
