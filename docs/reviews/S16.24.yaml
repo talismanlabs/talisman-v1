@@ -1,0 +1,24 @@
+slice_id: S16.24
+lead_agent: claude_code
+review_agent: codex_cli
+verdict: accepted
+summary: "The slice meets the observable live-run acceptance criteria: run_project now tees structured logs without losing the incident buffer, live phases emit start/completion progress when a logger is injected, the live entrypoint and CLI thread a durable log path through, and the detached deploy wrapper is within the requested scope."
+checks:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary:
+  status: pass
+  notes: "No new domain/workflow/policies imports of adapters or workers; the changes stay in app, CLI, deploy script, docs, and tests. Core workflow still uses ports."
+security:
+  status: pass
+  notes: "No secrets are introduced. Durable logging records run metadata and structured lifecycle/progress events; no provider keys or operator secrets are added to source, logs, tests, or prompts."
+acceptance_criteria:
+  status: pass
+  notes: "All five S16.24 criteria are satisfied by the changed code and tests, with deterministic checks reported passing by the lead."
+scope:
+  status: pass
+  notes: "Scope is limited to live-run observability, CLI/script wiring, docs, and focused tests. No unrelated architecture changes found."
+findings: []
