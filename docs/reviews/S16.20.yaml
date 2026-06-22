@@ -1,0 +1,25 @@
+slice_id: S16.20
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass_with_notes
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No blocking correctness, architecture-boundary, or security defects found. S16.20 stays within deploy/docs, adds ADR-0010, and the gateway reads mounted secret files, injects Anthropic/OpenAI auth headers, hardwires upstream provider hosts, disables access logs, and verifies upstream TLS. The acceptance evidence is local/operator evidence as requested; the dedicated spend-capped key property remains an operator pre-live condition rather than something the repo can mechanically prove."
+    required_fix: "None for acceptance; before the supervised live run, keep dedicated spend-capped provider keys as an explicit operator gate."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Pass — no defects. The one low note is not a code issue: the dedicated + spend-capped provider keys
+    are an operator pre-live condition the repo cannot mechanically prove. It stays an explicit operator
+    gate (ADR-0010 + the ledger + the founder hand-off) and is reaffirmed before the supervised run.

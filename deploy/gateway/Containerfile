@@ -1,0 +1,15 @@
+# TalisMan credential-injecting gateway (slice S16.20; ADR-0010).
+#
+# nginx terminates a worker's plain-HTTP provider request on the sealed network, overrides the
+# auth header with the real provider key (read from a mounted secret file — never in a worker),
+# and forwards to the real provider over verified TLS, streaming the response. The worker is
+# keyless: it carries only a placeholder key, so there is no real secret in the workload to leak.
+FROM docker.io/library/nginx:1.27-alpine
+
+RUN apk add --no-cache ca-certificates gettext
+
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

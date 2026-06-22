@@ -53,6 +53,31 @@ Workers run on `talisman-internal` **only**, with `HTTPS_PROXY=http://talisman-e
 `api.anthropic.com` *only* through the proxy (HTTP 401 over the tunnel), a non-allowlisted host was
 denied, and a direct attempt with no proxy was blocked (no route out).
 
+## Credential-injecting gateway — `gateway/` (S16.20; ADR-0010)
+
+The **keyless-worker** boundary (best practice; supersedes the ADR-0009 raw-key relaxation): a
+worker holds **no real provider key**. A small nginx gateway holds the real keys and injects them.
+
+```sh
+# build the gateway image
+podman build -f deploy/gateway/Containerfile -t talisman/gateway:latest deploy/gateway/
+
+# run it dual-homed (workers' sealed network + an egress network), reading the real keys from
+# MOUNTED secret files (never -e on the command line, never inside a worker)
+podman run -d --name talisman-gateway \
+  --network talisman-internal --network talisman-egress \
+  -v ~/talisman/secrets/anthropic.key:/run/secrets/anthropic_api_key:ro \
+  -v ~/talisman/secrets/openai.key:/run/secrets/openai_api_key:ro \
+  talisman/gateway:latest
+```
+
+Workers run on `talisman-internal` only, with `ANTHROPIC_BASE_URL=http://talisman-gateway:8800`,
+`OPENAI_BASE_URL=http://talisman-gateway:8801`, and a **placeholder** API key. The gateway replaces
+the placeholder with the real key (held only here — dedicated + spend-capped) and forwards to the
+real provider over verified TLS, streaming the response. **Verified locally (S16.20):** a worker
+carrying only a placeholder key reached real Anthropic *through* the gateway (it returned `pong`) —
+the real key was injected on the way out, and the worker never held it.
+
 ## systemd units — `systemd/` (S13.01, S16.10)
 
 The host-side gateway and the orchestrator units. The orchestrator unit launches the
