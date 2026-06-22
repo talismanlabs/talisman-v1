@@ -12,9 +12,12 @@ import argparse
 import signal
 import time
 from collections.abc import Sequence
+from dataclasses import replace
+from pathlib import Path
 from types import FrameType
 
 from talisman_core.app.composition import TalismanApp, build_application
+from talisman_core.app.live_entrypoint import LiveRunConfig, run_live
 
 _DEMO_PROJECT_ID = "demo"
 _DEMO_PHASES = ("discovery", "plan", "implementation", "review")
@@ -70,12 +73,44 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=30,
         help="Heartbeat interval for --serve mode.",
     )
+    parser.add_argument(
+        "--live-project",
+        action="store_true",
+        help="Run a real project through the spiral on containerized workers "
+        "(the supervised live run — real provider calls, real spend).",
+    )
+    parser.add_argument("--goal", default=None, help="The project goal (with --live-project).")
+    parser.add_argument("--project-id", default="live", help="Project id (with --live-project).")
+    parser.add_argument(
+        "--workspace", default=None, help="Workspace directory (with --live-project)."
+    )
+    parser.add_argument(
+        "--secrets-dir",
+        default=None,
+        help="Operator secrets directory (default ~/talisman/secrets).",
+    )
     return parser
 
 
+def _run_live_project(args: argparse.Namespace) -> int:
+    """Assemble and run the supervised live project from the parsed CLI args. Real spend."""
+    if not args.goal or not args.workspace:
+        raise SystemExit("--live-project requires --goal and --workspace")
+    config = LiveRunConfig(
+        goal=args.goal, workspace=Path(args.workspace), project_id=args.project_id
+    )
+    if args.secrets_dir:
+        config = replace(config, secrets_dir=Path(args.secrets_dir))
+    result = run_live(config)
+    print(f"live run complete: project={config.project_id} gates_fired={len(result.gates_fired)}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    """Build the application and run a dry-run, a persistent service, or a demo spiral."""
+    """Build and run: a dry-run, a persistent service, a live project, or the demo spiral."""
     args = build_arg_parser().parse_args(argv)
+    if args.live_project:
+        return _run_live_project(args)
     app = build_application()
     if args.dry_run:
         app.logger.log("dry_run_ok", phases=list(_DEMO_PHASES))
