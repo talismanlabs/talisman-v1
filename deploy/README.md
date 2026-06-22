@@ -1,8 +1,11 @@
 # TalisMan deployment artifacts
 
 These are the pieces an operator deploys onto the always-on box (a cheap Ubuntu 24.04 VM).
-A turnkey deploy script that installs and wires them together lands in a later slice; this
-directory holds the building blocks.
+**`deploy/setup.sh` (S16.23) is the turnkey script** that wires them together — run it once on
+the box (as the non-root `talisman` user, from the repo root, after placing the operator secret
+files), and it preflights the host, syncs the venv, verifies the secrets, builds the worker +
+gateway images, creates the sealed networks, and starts the credential gateway. It is idempotent.
+The sections below document the building blocks it assembles.
 
 ## Worker image — `Containerfile.worker` (S16.18; ADR-0007)
 
