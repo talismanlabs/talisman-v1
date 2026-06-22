@@ -1,9 +1,17 @@
 """Tests for the TalisMan entrypoint (slice S14.01; --serve runtime S16.10)."""
 
 import signal
+from datetime import UTC, datetime
+from pathlib import Path
 
 from talisman_core.app.composition import build_application
-from talisman_core.main import _ServiceRunner, build_arg_parser, main
+from talisman_core.main import (
+    _default_log_file,
+    _run_live_project,
+    _ServiceRunner,
+    build_arg_parser,
+    main,
+)
 
 
 def test_dry_run_returns_zero() -> None:
@@ -61,3 +69,41 @@ def test_main_serve_dispatches_to_the_service_runner(monkeypatch) -> None:
     monkeypatch.setattr("talisman_core.main._ServiceRunner.run", stub_run)
     assert main(["--serve"]) == 0
     assert called["ran"] is True
+
+
+def test_default_log_file_is_a_timestamped_path_under_talisman_logs() -> None:
+    """The default run-log path is ~/talisman/logs/<project>-<UTC timestamp>.log."""
+    path = _default_log_file("news", now=datetime(2026, 6, 22, 14, 5, 9, tzinfo=UTC))
+    assert path == Path.home() / "talisman" / "logs" / "news-20260622T140509Z.log"
+
+
+def test_arg_parser_accepts_log_file() -> None:
+    """The parser accepts an explicit --log-file path for a live run."""
+    args = build_arg_parser().parse_args(["--live-project", "--log-file", "/tmp/run.log"])
+    assert args.log_file == "/tmp/run.log"
+
+
+def test_run_live_project_threads_a_log_file_into_the_config(monkeypatch, capsys) -> None:
+    """_run_live_project derives a default log file, prints it, and passes it to run_live."""
+    captured = {}
+
+    def fake_run_live(config):
+        captured["config"] = config
+
+        class _Result:
+            gates_fired = ()
+
+        return _Result()
+
+    monkeypatch.setattr("talisman_core.main.run_live", fake_run_live)
+    args = build_arg_parser().parse_args(
+        ["--live-project", "--goal", "g", "--workspace", "/tmp/ws", "--project-id", "news"]
+    )
+
+    assert _run_live_project(args) == 0
+    config = captured["config"]
+    assert config.log_file is not None
+    assert config.log_file.parent == Path.home() / "talisman" / "logs"
+    assert config.log_file.name.startswith("news-")
+    out = capsys.readouterr().out
+    assert "watch live: tail -f" in out  # the operator is told where to watch

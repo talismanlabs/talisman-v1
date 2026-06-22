@@ -7,10 +7,13 @@ next phase's context.
 
 from __future__ import annotations
 
-from talisman_core.app.live_run import run_live_project
+import json
+
+from talisman_core.app.live_run import live_phase_handlers, run_live_project
 from talisman_core.app.project_run import ProjectSpec
+from talisman_core.observability.logs import StructuredLogger
 from talisman_core.ports.worker import WorkerRequest, WorkerResult
-from talisman_core.workflow.spiral import SPIRAL_PHASES
+from talisman_core.workflow.spiral import SPIRAL_PHASES, SpiralState
 
 
 class _RecordingWorker:
@@ -73,3 +76,50 @@ def test_implementation_prompt_keeps_the_branch_only_constraint(tmp_path) -> Non
     impl = worker.prompts["implementation"]
     assert "never push to main" in impl
     assert "never merge" in impl
+
+
+def _initial_state(project_id: str) -> SpiralState:
+    return {
+        "project_id": project_id,
+        "tier": "standard",
+        "phase_sequence": [],
+        "current_phase": "",
+        "completed_phases": [],
+        "pending_gate_id": None,
+        "last_decision": None,
+        "artifacts": [],
+        "escalations_today": 0,
+    }
+
+
+def test_phase_handler_logs_started_and_completed_progress(tmp_path) -> None:
+    """With a logger injected, a phase emits started + completed events with duration and size."""
+    lines: list[str] = []
+    logger = StructuredLogger(lines.append)
+    ticks = iter([10.0, 14.5])  # start, end → duration 4.5s (deterministic clock)
+    handlers = live_phase_handlers(
+        "build a simple Google News replica",
+        _RecordingWorker(),
+        tmp_path,
+        SPIRAL_PHASES,
+        logger=logger,
+        clock=lambda: next(ticks),
+    )
+
+    output = handlers["discovery"](_initial_state("news-replica"))
+
+    events = [json.loads(line) for line in lines]
+    started = next(e for e in events if e["event"] == "phase_started")
+    completed = next(e for e in events if e["event"] == "phase_completed")
+    assert started["phase"] == "discovery"
+    assert completed["phase"] == "discovery"
+    assert completed["duration_seconds"] == 4.5
+    assert completed["output_chars"] == len(output)  # "OUTPUT[discovery]"
+    assert completed["project_id"] == "news-replica"
+
+
+def test_phase_handlers_stay_silent_without_a_logger(tmp_path) -> None:
+    """No logger → no progress events (the deterministic test path is unchanged)."""
+    handlers = live_phase_handlers("g", _RecordingWorker(), tmp_path, SPIRAL_PHASES)
+    # Runs without raising and produces the artifact, emitting nothing.
+    assert handlers["interview"](_initial_state("p")) == "OUTPUT[interview]"
