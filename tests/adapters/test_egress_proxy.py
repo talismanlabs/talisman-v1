@@ -14,6 +14,13 @@ from contextlib import contextmanager
 from talisman_core.adapters.egress_proxy import EgressProxy
 
 
+def test_proxy_can_bind_all_interfaces_for_the_gateway() -> None:
+    """The proxy can bind 0.0.0.0 so workers reach it from the sealed network (S16.19; ADR-0009)."""
+    with EgressProxy(host="0.0.0.0", port=0) as proxy:
+        assert proxy.address[0] == "0.0.0.0"
+        assert proxy.proxy_url.startswith("http://0.0.0.0:")
+
+
 def _read_response_head(sock: socket.socket) -> str:
     """Read up to the blank-line terminator and return the HTTP status line."""
     buffer = b""

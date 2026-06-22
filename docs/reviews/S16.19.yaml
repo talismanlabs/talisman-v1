@@ -1,0 +1,34 @@
+slice_id: S16.19
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No defects found. S16.19 satisfies the acceptance criteria: ADR-0009 documents the dual-homed egress-gateway topology and keeps the raw-provider-key worker-auth relaxation explicitly proposed pending founder confirmation; egress_proxy remains in the adapters layer and now has serve_forever plus a standalone __main__ entrypoint; deploy/README documents the two-network proxy container setup; the documented local podman evidence covers allowed provider access through the proxy, non-allowlisted denial, and direct-egress blocking; AT-14 is not grade-inflated."
+    required_fix: "None."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Passed on the second pass after a round-1 BLOCK (architecture + security checks failed on a
+    governance defect, not a code defect).
+  round_1_fixed:
+    - "R1 (blocker): the repo recorded conflicting states for the worker-auth D6 relaxation — the backlog
+      and ledger said 'founder-confirmed' while the ADR said 'pending'. In fact the founder authorized the
+      egress-gateway build, not the credential relaxation. Fixed by making the trail consistently
+      PROPOSED/pending the founder's explicit confirmation across ADR-0009, the backlog, and the ledger,
+      and stating plainly that S16.19 injects no keys — no provider key reaches a worker until the founder
+      confirms (Codex's option b)."
+  note: >
+    The egress-gateway topology is built + proven; the worker-auth relaxation is explicitly undecided and
+    gated to Stage 3.
