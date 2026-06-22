@@ -1,0 +1,39 @@
+slice_id: S16.17
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No defects found. The slice satisfies S16.17: TelegramBot is governed adapter code, TelegramApprover implements ApprovalPort without pulling adapters into workflow/policy/domain layers, gates are posted to the configured chat, only allowlisted APPROVE/REJECT replies resolve decisions, non-allowlisted and unparseable replies are ignored, token-bearing httpx failures are scrubbed, AT-05 remains COMPONENT_VERIFIED, and the changes stay within the requested slice scope."
+    required_fix: "None."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Passed on the third pass after two BLOCKs (both failed security checks) on this safety-critical
+    approval channel; Codex caught four real security issues, all fixed.
+  round_1_fixed:
+    - "R1 (blocker): stale-update replay — the offset started at 0, so a pre-gate APPROVE could resolve a
+      new gate. Fixed: drain all pending updates before posting; only a post-gate reply counts. Test added."
+    - "R2 (high): cross-chat acceptance — inbound decisions were taken from any chat. Fixed: a reply must
+      come from the configured operator chat_id. Test added."
+    - "R3 (medium): ambiguous vocabulary — yes/ok/y/no/deny widened the approval surface. Narrowed to the
+      exact APPROVE/REJECT commands. Test added."
+  round_2_fixed:
+    - "R1 (blocker, security): the bot token lives in the request URL and httpx error messages include the
+      URL, so a Telegram failure could carry bot<TOKEN> into logs / incident dumps. Fixed: all requests go
+      through a _request wrapper that scrubs the token and suppresses the token-bearing exception
+      (TelegramTransportError), plus a Telegram-token pattern added to redact_secrets (defense in depth at
+      the dump). A regression test proves a failing getUpdates does not surface the token."
+  note: >
+    AT-05 stays COMPONENT_VERIFIED (the live channel with a real token is operator-verified, not CI).

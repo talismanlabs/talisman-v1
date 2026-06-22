@@ -47,6 +47,7 @@ _SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"sk-[A-Za-z0-9_-]{16,}"),  # OpenAI / Anthropic-style API keys
     re.compile(r"gh[posru]_[A-Za-z0-9]{20,}"),  # GitHub tokens
     re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS access key ids
+    re.compile(r"\d{6,}:[A-Za-z0-9_-]{30,}"),  # Telegram bot tokens (<id>:<secret>)
 )
 
 

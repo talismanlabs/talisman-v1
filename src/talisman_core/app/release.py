@@ -109,9 +109,11 @@ ACCEPTANCE_RESULTS: tuple[AcceptanceResult, ...] = (
         "AT-05",
         "Telegram allowlist",
         AcceptanceStatus.COMPONENT_VERIFIED,
-        "allowlist policy built + unit-tested (adapters/telegram/allowlist.py). The live "
-        "@Talisman0_bot runtime accepting an allowlisted account and rejecting others was shown "
-        f"in the operator walkthrough. {_PROTOTYPE} (bot runtime: adapters/telegram/bot.py).",
+        "allowlist policy built + unit-tested (adapters/telegram/allowlist.py); the bot transport "
+        "(adapters/telegram/bot.py) and the TelegramApprover gate channel (adapters/telegram/approver.py "
+        "— posts each gate, accepts only an allowlisted APPROVE/REJECT) are now governed + CI-tested with "
+        "a mock (S16.17). The live @Talisman0_bot with a real token + operator chat is operator-verified, "
+        "not CI; flips to PASS at the supervised live run.",
     ),
     AcceptanceResult(
         "AT-06",
