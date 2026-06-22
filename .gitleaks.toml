@@ -32,6 +32,7 @@ regexes = [
   '''@example\.(com|org|net)''',
   '''(?:noreply|no-reply)@''',
   '''/(?:home|Users)/runner/''',
+  '''/home/worker/''',
 ]
 paths = [
   '''uv\.lock''',                  # machine-generated; embeds upstream maintainer emails

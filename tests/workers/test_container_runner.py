@@ -33,6 +33,8 @@ def test_build_command_isolates_the_worker_invocation(tmp_path: Path) -> None:
     # podman must NOT inherit the host's proxy vars; only our explicit (upper- + lower-case) env.
     assert "--http-proxy=false" in command
     assert "https_proxy=http://127.0.0.1:8888" in command
+    # Map the host user in so the non-root worker can write the bind-mounted workspace (S16.18).
+    assert "--userns=keep-id" in command
     assert f"{tmp_path}:{tmp_path}:Z" in command
     assert command[command.index("--workdir") + 1] == str(tmp_path)
     # The worker command is the tail, after the image.

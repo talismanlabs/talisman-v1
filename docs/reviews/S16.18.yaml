@@ -1,0 +1,33 @@
+slice_id: S16.18
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass_with_notes
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No blocking correctness, architecture-boundary, or security defects found. The worker image satisfies the requested Ubuntu 24.04, Node 20, Claude Code, Codex, git, non-root, no-credential shape; ContainerRunner remains in the workers layer and now uses --userns=keep-id so the non-root image can write the mounted workspace; AT-14 remains component-verified. Non-blocking documentation inconsistency: the S16.18 backlog and progress-ledger wording still says or implies 'no Python change' while this revision intentionally changes src/talisman_core/workers/_container.py and its test."
+    required_fix: "None for acceptance; before merge, update the S16.18 backlog/progress wording to acknowledge the narrow ContainerRunner flag change."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Passed on the second pass after a round-1 BLOCK. Codex caught a real rootless-podman defect that the
+    image's non-root user exposed; fixed.
+  round_1_fixed:
+    - "R1 (blocker): the image runs as a non-root user, but ContainerRunner bind-mounted the host
+      workspace without --userns=keep-id, so under rootless podman the worker's UID mapped to an
+      unprivileged subuid that could not write host-owned files — a real branch-and-commit would have
+      failed. Reproduced locally (write FAILED without keep-id, succeeded with it), then added
+      --userns=keep-id to ContainerRunner.build_command with a unit assertion."
+  round_2_note: >
+    Fixed the round-2 low note (stale 'no Python change' wording in the backlog/ledger — the revise
+    intentionally touched _container.py).
