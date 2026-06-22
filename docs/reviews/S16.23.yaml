@@ -1,0 +1,30 @@
+slice_id: S16.23
+lead_agent: claude_code
+review_agent: codex_cli
+review_status: pass
+risk_level: medium
+checks_observed:
+  ruff: pass
+  ruff_format: pass
+  mypy: pass
+  pytest: pass
+  lint_imports: pass
+architecture_boundary_check: pass
+security_check: pass
+findings:
+  - id: R1
+    severity: low
+    finding: "No defects found. S16.23 meets its acceptance criteria: deploy/setup.sh is executable and idempotently preflights non-root rootless Podman plus uv and git, runs uv sync, secures/verifies existing operator secret files without creating them, builds the worker and gateway images, creates or validates the internal network, creates the egress network, starts the credential gateway with restart=always and read-only mounted provider secrets, and prints the --live-project command without starting a run. deploy/README points at the script; docs updates are scoped to S16.23 status/progress. No Python changed, no import-boundary impact, and no secrets are committed."
+    required_fix: "None."
+final_recommendation: accept
+lead_response:
+  status: accepted
+  summary: >
+    Round 1 BLOCKED on two real security gaps; both fixed and re-reviewed clean. R1: setup.sh now
+    fails closed on secret permissions — it chmods the dir to 700 and each secret to 600 (or dies on a
+    chmod failure) before any secret is mounted, instead of only warning. R2: an existing
+    talisman-internal network is now validated as genuinely --internal (podman inspect .Internal); the
+    run dies with remediation if it is not, so a stale non-internal network can't silently defeat
+    containment. R3: the S16.22 backlog status column is corrected to accepted. Re-verified locally:
+    loose 755/644 perms were tightened to 700/600 and the run proceeded; a non-internal
+    talisman-internal network was rejected.
