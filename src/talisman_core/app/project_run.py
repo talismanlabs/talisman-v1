@@ -15,7 +15,7 @@ the live run, which remains a human-authorized step.
 from __future__ import annotations
 
 import contextlib
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -110,6 +110,7 @@ def run_project(
     approver: ApprovalPort | None = None,
     incident_dir: Path | None = None,
     memory: MemoryPort | None = None,
+    log_sink: Callable[[str], object] | None = None,
 ) -> ProjectRunResult:
     """Run ``spec`` through the governed spiral and return its final state + gates fired.
 
@@ -122,16 +123,28 @@ def run_project(
     retrieved and surfaced at intake (logged, and returned on the result) so accumulated
     lessons inform each new project (AT-17).
 
+    If ``log_sink`` is supplied, every structured log line is **also** written there (e.g. a
+    run log file + stdout) in addition to the in-memory buffer kept for the incident dump — so
+    a live run is observable as it happens, not a black box. Ignored when ``app`` is injected
+    (the caller owns that app's logging).
+
     If the run halts catastrophically (an unhandled error escapes the spiral), an incident
     dump of the reason + recent logs is written to ``incident_dir`` (default
     ``~/talisman/incidents``) before the error re-raises (AT-19).
     """
     resolved_approver: ApprovalPort = approver if approver is not None else _ApproveAllApprover()
     captured_logs: list[str] = []
+
+    def buffered_sink(line: str) -> None:
+        """Keep every line for the incident dump, and tee to the external sink if present."""
+        captured_logs.append(line)
+        if log_sink is not None:
+            log_sink(line)
+
     application = app or build_application(
         handlers=handlers,
         gate_phases=set(spec.gate_phases),
-        log_sink=captured_logs.append,
+        log_sink=buffered_sink,
     )
     surfaced_lessons = _surface_lessons_at_intake(spec, memory, application)
     try:

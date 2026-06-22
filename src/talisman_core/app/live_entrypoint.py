@@ -12,6 +12,9 @@ are unit-tested without launching a container, reaching the network, or spending
 
 from __future__ import annotations
 
+import sys
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,6 +28,7 @@ from talisman_core.app.live_workers import (
     build_containerized_worker,
 )
 from talisman_core.app.project_run import ProjectRunResult, ProjectSpec
+from talisman_core.observability.logs import StructuredLogger
 from talisman_core.ports.worker import WorkerPort
 from talisman_core.workflow.spiral import SPIRAL_PHASES
 
@@ -51,6 +55,8 @@ class LiveRunConfig:
     network: str = "talisman-internal"
     gateway_host: str = "talisman-gateway"
     family: WorkerFamily = "claude"
+    log_file: Path | None = None
+    """Where to write the durable, line-by-line run log. ``None`` → stdout only."""
 
 
 def build_live_spec(config: LiveRunConfig) -> ProjectSpec:
@@ -88,14 +94,66 @@ def build_live_approver(secrets_dir: Path) -> TelegramApprover:
     return TelegramApprover(bot, operator_id)
 
 
+@contextmanager
+def open_run_log(log_file: Path | None) -> Iterator[Callable[[str], None]]:
+    """Yield a log sink that writes each line to stdout and, if given, to ``log_file`` too.
+
+    The file is opened in append mode and flushed per line so an operator can ``tail -f`` it live;
+    stdout is always written so a foreground run (or journald) still sees the events. With no file
+    the sink is stdout-only — keeping the builders cheap to unit-test.
+    """
+    if log_file is None:
+        yield _stdout_writer
+        return
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    with log_file.open("a", encoding="utf-8") as handle:
+
+        def write(line: str) -> None:
+            _stdout_writer(line)
+            handle.write(line)
+            handle.flush()
+
+        yield write
+
+
+def _stdout_writer(line: str) -> None:
+    """Write one already-newline-terminated line to stdout and flush it for live tailing."""
+    sys.stdout.write(line)
+    sys.stdout.flush()
+
+
 def run_live(config: LiveRunConfig) -> ProjectRunResult:
     """Assemble and run the supervised live project: real workers + gateway + Telegram. Real spend.
 
     Thin composition over the builders above (each independently tested); calling it is the
-    human-gated live run, so it is not exercised by the deterministic gate.
+    human-gated live run, so it is not exercised by the deterministic gate. Every structured event
+    is written to ``config.log_file`` (and stdout), and each phase logs its start/finish — so the
+    run is observable instead of a black box.
     """
     config.workspace.mkdir(parents=True, exist_ok=True)
     worker = build_live_worker(config)
     approver = build_live_approver(config.secrets_dir)
     spec = build_live_spec(config)
-    return run_live_project(spec, worker=worker, workspace=config.workspace, approver=approver)
+    with open_run_log(config.log_file) as sink:
+        logger = StructuredLogger(sink)
+        logger.log(
+            "live_run_started",
+            project_id=config.project_id,
+            goal=config.goal,
+            workspace=str(config.workspace),
+        )
+        result = run_live_project(
+            spec,
+            worker=worker,
+            workspace=config.workspace,
+            approver=approver,
+            logger=logger,
+            log_sink=sink,
+        )
+        logger.log(
+            "live_run_finished",
+            project_id=config.project_id,
+            gates_fired=list(result.gates_fired),
+            completed_phases=result.final_state["completed_phases"],
+        )
+    return result

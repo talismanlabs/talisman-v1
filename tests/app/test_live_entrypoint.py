@@ -17,6 +17,7 @@ from talisman_core.app.live_entrypoint import (
     build_live_approver,
     build_live_spec,
     build_live_worker,
+    open_run_log,
 )
 from talisman_core.workflow.spiral import SPIRAL_PHASES
 
@@ -66,3 +67,31 @@ def test_live_project_cli_requires_goal_and_workspace() -> None:
     args = build_arg_parser().parse_args(["--live-project"])
     with pytest.raises(SystemExit):
         _run_live_project(args)
+
+
+def test_open_run_log_writes_every_line_to_the_file(tmp_path: Path, capsys) -> None:
+    """The run-log sink appends each line to the file (and mirrors it to stdout) for live tailing."""
+    log_file = tmp_path / "logs" / "run.log"
+
+    with open_run_log(log_file) as sink:
+        sink('{"event": "live_run_started"}\n')
+        sink('{"event": "phase_started"}\n')
+
+    body = log_file.read_text(encoding="utf-8")
+    assert "live_run_started" in body
+    assert "phase_started" in body
+    assert "live_run_started" in capsys.readouterr().out  # also mirrored to stdout
+
+
+def test_open_run_log_without_a_file_is_stdout_only(tmp_path: Path, capsys) -> None:
+    """With no log file the sink is stdout-only (cheap default for tests)."""
+    with open_run_log(None) as sink:
+        sink('{"event": "x"}\n')
+    assert '{"event": "x"}' in capsys.readouterr().out
+
+
+def test_live_run_config_carries_a_log_file(tmp_path: Path) -> None:
+    """The config exposes the durable run-log path threaded into the live run."""
+    config = LiveRunConfig(goal="g", workspace=tmp_path, log_file=tmp_path / "x.log")
+    assert config.log_file == tmp_path / "x.log"
+    assert LiveRunConfig(goal="g", workspace=tmp_path).log_file is None  # default off

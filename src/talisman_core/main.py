@@ -13,6 +13,7 @@ import signal
 import time
 from collections.abc import Sequence
 from dataclasses import replace
+from datetime import UTC, datetime
 from pathlib import Path
 from types import FrameType
 
@@ -89,18 +90,36 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Operator secrets directory (default ~/talisman/secrets).",
     )
+    parser.add_argument(
+        "--log-file",
+        default=None,
+        help="Durable run-log path (with --live-project). Default: "
+        "~/talisman/logs/<project-id>-<timestamp>.log. Tail it to watch the run live.",
+    )
     return parser
+
+
+def _default_log_file(project_id: str, *, now: datetime | None = None) -> Path:
+    """The default durable run-log path: ``~/talisman/logs/<project-id>-<UTC timestamp>.log``."""
+    stamp = (now or datetime.now(UTC)).strftime("%Y%m%dT%H%M%SZ")
+    return Path.home() / "talisman" / "logs" / f"{project_id}-{stamp}.log"
 
 
 def _run_live_project(args: argparse.Namespace) -> int:
     """Assemble and run the supervised live project from the parsed CLI args. Real spend."""
     if not args.goal or not args.workspace:
         raise SystemExit("--live-project requires --goal and --workspace")
+    log_file = Path(args.log_file) if args.log_file else _default_log_file(args.project_id)
     config = LiveRunConfig(
-        goal=args.goal, workspace=Path(args.workspace), project_id=args.project_id
+        goal=args.goal,
+        workspace=Path(args.workspace),
+        project_id=args.project_id,
+        log_file=log_file,
     )
     if args.secrets_dir:
         config = replace(config, secrets_dir=Path(args.secrets_dir))
+    print(f"run log: {log_file}")
+    print(f"  watch live: tail -f {log_file}")
     result = run_live(config)
     print(f"live run complete: project={config.project_id} gates_fired={len(result.gates_fired)}")
     return 0

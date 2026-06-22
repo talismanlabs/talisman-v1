@@ -172,3 +172,34 @@ def test_no_memory_surfaces_no_lessons() -> None:
     """Without a memory store the default path is unchanged: no lessons surfaced."""
     result = run_project(ProjectSpec("plain", ("plan",)))
     assert result.surfaced_lessons == ()
+
+
+def test_log_sink_observes_the_run_lifecycle() -> None:
+    """An injected log_sink receives the structured lifecycle events — the run isn't a black box."""
+    lines: list[str] = []
+    spec = ProjectSpec("observed", ("interview", "plan", "review"), frozenset({"plan"}))
+
+    run_project(spec, log_sink=lines.append)
+
+    joined = " ".join(lines)
+    assert "gated_project_started" in joined
+    assert "gated_project_finished" in joined
+    assert "observed" in joined  # the project id is carried on the events
+
+
+def test_log_sink_does_not_disable_the_incident_dump(tmp_path) -> None:
+    """Teeing to a log_sink still keeps the in-memory buffer used for the incident dump (AT-19)."""
+
+    def boom(_state: object) -> str:
+        raise RuntimeError("planner exploded")
+
+    lines: list[str] = []
+    spec = ProjectSpec("doomed-but-logged", ("plan",))
+
+    with pytest.raises(RuntimeError, match="planner exploded"):
+        run_project(spec, handlers={"plan": boom}, incident_dir=tmp_path, log_sink=lines.append)
+
+    # the external sink saw the run start...
+    assert any("gated_project_started" in line for line in lines)
+    # ...and the incident dump was still written from the retained buffer
+    assert len(list(tmp_path.glob("incident-doomed-but-logged-*.md"))) == 1
